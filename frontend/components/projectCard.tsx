@@ -7,7 +7,7 @@ export default function ProjectCard({ project }: { project: Project }) {
       <p className="text-sm opacity-80">{project.description}</p>
 
       <div className="flex flex-wrap gap-2">
-        {project.tech.map((t) => (
+        {(project.tech ?? []).map((t) => (
           <span key={t} className="text-xs border rounded-full px-2 py-1">
             {t}
           </span>

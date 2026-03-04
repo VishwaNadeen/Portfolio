@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { projects } from "../data/projects";
 import ProjectCard from "../components/projectCard";
 import StatCard from "../components/statCard";
-import { getLatestStats } from "../lib/api";
+import { getLatestStats, getFeaturedGitHubProjects } from "../lib/api";
 
 type StatsResponse = {
   github: null | {
@@ -22,7 +21,8 @@ type StatsResponse = {
 };
 
 export default async function HomePage() {
-  const featured = projects.slice(0, 3);
+  // ✅ Featured projects from MongoDB (public latest 3)
+  const featured = await getFeaturedGitHubProjects(3);
 
   const stats = (await getLatestStats()) as StatsResponse | null;
   const github = stats?.github ?? null;
@@ -31,16 +31,13 @@ export default async function HomePage() {
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
       <div className="mx-auto max-w-5xl px-4 py-12 space-y-14">
-
         {/* HERO */}
         <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/40 p-6 md:p-10 backdrop-blur">
-
           {/* glow */}
           <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
 
           <div className="space-y-5 fade-up">
-
             <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white">
               Hi, I’m{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
@@ -74,14 +71,11 @@ export default async function HomePage() {
                 Contact
               </Link>
             </div>
-
           </div>
         </section>
 
-
         {/* LIVE STATS */}
         <section className="space-y-5">
-
           <h2 className="text-xl font-semibold text-white">Live Stats</h2>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -118,17 +112,12 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
-
         </section>
-
 
         {/* FEATURED PROJECTS */}
         <section className="space-y-5">
           <div className="flex items-center justify-between gap-3">
-
-            <h2 className="text-xl font-semibold text-white">
-              Featured Projects
-            </h2>
+            <h2 className="text-xl font-semibold text-white">Featured Projects</h2>
 
             <Link
               className="text-sm text-slate-300 hover:text-white transition-colors duration-300"
@@ -136,28 +125,42 @@ export default async function HomePage() {
             >
               View all →
             </Link>
-
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {featured.map((p, i) => (
-              <div
-                key={p.title}
-                className="rounded-2xl border border-slate-800 bg-slate-950/40 p-1 transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/30"
-                style={{ animationDelay: `${i * 80}ms` }}
-              >
-                <div
-                  className="rounded-2xl p-3 fade-up"
-                  style={{ animationDelay: `${150 + i * 90}ms` }}
-                >
-                  <ProjectCard project={p} />
-                </div>
-              </div>
-            ))}
+            {featured.map((p: any, i: number) => {
+  const techArr =
+    Array.isArray(p.tech) && p.tech.length
+      ? p.tech
+      : Array.isArray(p.topics) && p.topics.length
+      ? p.topics
+      : [p.language].filter(Boolean);
+
+  const mapped = {
+    title: p.customTitle || p.name,
+    description: p.customDescription || p.description || "",
+    tech: techArr, // ✅ IMPORTANT (ProjectCard uses project.tech.map)
+    url: p.htmlUrl, // or "href" depending on your ProjectCard
+    liveUrl: p.liveUrl || "",
+  };
+
+  return (
+    <div
+      key={p._id || p.repoId || mapped.title}
+      className="rounded-2xl border border-slate-800 bg-slate-950/40 p-1 transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/30"
+      style={{ animationDelay: `${i * 80}ms` }}
+    >
+      <div
+        className="rounded-2xl p-3 fade-up"
+        style={{ animationDelay: `${150 + i * 90}ms` }}
+      >
+        <ProjectCard project={mapped as any} />
+      </div>
+    </div>
+  );
+})}
           </div>
-
         </section>
-
       </div>
     </main>
   );

@@ -1,25 +1,21 @@
 import { Router } from "express";
-import type { AnyBulkWriteOperation } from "mongoose";
-import { GitHubProject, type IGitHubProject } from "../models/GitHubProject";
+import { GitHubProject } from "../models/GitHubProject";
+import { syncGitHubProjectsToDb } from "../jobs/githubSyncJob";
 
 const router = Router();
 
-function ghHeaders() {
-  const token = process.env.GITHUB_TOKEN;
+/**
+ * ✅ Public-only filter (private repos never show)
+ */
+const PUBLIC_FILTER = { isHidden: false, isPrivate: false };
 
-  const headers: Record<string, string> = {
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
-}
-
-// GET /api/github/projects (from DB)
+/**
+ * GET /api/github/projects
+ * (DB → public projects only)
+ */
 router.get("/projects", async (_req, res) => {
   try {
-    const items = await GitHubProject.find({ isHidden: false })
+    const items = await GitHubProject.find(PUBLIC_FILTER)
       .sort({ featured: -1, displayOrder: 1, stars: -1 })
       .lean();
 
@@ -30,66 +26,42 @@ router.get("/projects", async (_req, res) => {
   }
 });
 
-// POST /api/github/sync (pull from GitHub → save DB)
+/**
+ * ✅ GET /api/github/featured?limit=3
+ * Home page Featured Projects → latest 3 public projects
+ */
+router.get("/featured", async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit || 3), 12);
+
+    const items = await GitHubProject.find(PUBLIC_FILTER)
+      .sort({
+        pushedAt: -1,
+        updatedAtGithub: -1,
+        stars: -1,
+      })
+      .limit(limit)
+      .lean();
+
+    return res.json(items);
+  } catch (err: any) {
+    console.error("GET /api/github/featured error:", err?.message || err);
+    return res.status(500).json({ message: "Failed to load featured projects." });
+  }
+});
+
+/**
+ * POST /api/github/sync
+ * ✅ Uses shared job (same logic used by cron)
+ */
 router.post("/sync", async (_req, res) => {
   try {
-    const username = process.env.GITHUB_USERNAME;
-    if (!username) {
-      return res.status(400).json({ message: "Missing GITHUB_USERNAME" });
-    }
-
-    const url = `https://api.github.com/users/${username}/repos?per_page=100&sort=updated`;
-    const r = await fetch(url, { headers: ghHeaders() });
-
-    if (!r.ok) {
-      const text = await r.text();
-      return res.status(r.status).json({
-        message: "GitHub fetch failed",
-        details: text,
-      });
-    }
-
-    const repos: any[] = await r.json();
-
-        const bulk: AnyBulkWriteOperation[] = repos
-    .filter((repo) => !repo.fork)
-    .map((repo) => ({
-        updateOne: {
-        filter: { repoId: repo.id },
-        update: {
-            $set: {
-            repoId: repo.id,
-            name: repo.name,
-            fullName: repo.full_name,
-            htmlUrl: repo.html_url,
-            description: repo.description || "",
-            language: repo.language || "",
-            stars: repo.stargazers_count || 0,
-            forks: repo.forks_count || 0,
-            updatedAtGithub: repo.updated_at ? new Date(repo.updated_at) : undefined,
-            pushedAt: repo.pushed_at ? new Date(repo.pushed_at) : undefined,
-            },
-            $setOnInsert: {
-            featured: false,
-            displayOrder: 9999,
-            isHidden: false,
-            topics: [],
-            },
-        },
-        upsert: true,
-        },
-    }));
-
-    if (bulk.length) {
-    await GitHubProject.bulkWrite(bulk);
-    }
+    const result = await syncGitHubProjectsToDb();
 
     return res.json({
-      message: "Synced",
-      totalFetched: repos.length,
-      savedOrUpdated: bulk.length,
+      message: "Synced (public repos only) + cleaned removed/private repos",
+      ...result,
     });
-    
   } catch (err: any) {
     console.error("POST /api/github/sync error:", err?.message || err);
     return res.status(500).json({ message: "Sync failed." });

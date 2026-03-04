@@ -7,6 +7,7 @@ import contactRoutes from "./routes/contactRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
 import githubRoutes from "./routes/githubRoutes";
 import statsRoutes from "./routes/statsRoutes";
+import githubWebhookRoutes from "./routes/githubWebhookRoutes";
 
 const app = express();
 
@@ -33,5 +34,6 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/track", analyticsRoutes);
 app.use("/api/github", githubRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/github", githubWebhookRoutes);
 
 export default app;
