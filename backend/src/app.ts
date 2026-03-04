@@ -17,22 +17,27 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: true, credentials: true }));
+
+// ONE CORS ONLY (portfolio + admin)
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000", // portfolio frontend
+      "http://localhost:3001", // admin panel
+    ],
+    credentials: true,
+  })
+);
+
 app.use(express.json({ limit: "1mb" }));
 
 // basic rate limit (avoid spam)
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 200
+    limit: 200,
   })
 );
-
-// CORS configuration - allow frontend origin and credentials
-app.use(cors({
-  origin: ["http://localhost:3000"],
-  credentials: true
-}));
 
 // Health check endpoint
 app.get("/health", (_req, res) => res.json({ ok: true }));
