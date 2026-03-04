@@ -24,86 +24,141 @@ type StatsResponse = {
 export default async function HomePage() {
   const featured = projects.slice(0, 3);
 
-  // ✅ fetch latest stats from DB (backend)
   const stats = (await getLatestStats()) as StatsResponse | null;
   const github = stats?.github ?? null;
   const youtube = stats?.youtube ?? null;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 space-y-12">
-      {/* HERO */}
-      <section className="space-y-4">
-        <h1 className="text-3xl md:text-5xl font-bold">Hi, I’m Vishwa Nadeen</h1>
+    <main className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
+      <div className="mx-auto max-w-5xl px-4 py-12 space-y-14">
 
-        <p className="text-base md:text-lg opacity-80 max-w-2xl">
-          Full-stack developer. I build clean, modern web apps using Next.js and Node.js.
-        </p>
+        {/* HERO */}
+        <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/40 p-6 md:p-10 backdrop-blur">
 
-        <div className="flex flex-wrap gap-3">
-          <Link className="px-4 py-2 border rounded-lg hover:opacity-90" href="/projects">
-            View Projects
-          </Link>
-          <Link className="px-4 py-2 border rounded-lg hover:opacity-90" href="/contact">
-            Contact
-          </Link>
-        </div>
-      </section>
+          {/* glow */}
+          <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
 
-      {/* LIVE STATS */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Live Stats</h2>
+          <div className="space-y-5 fade-up">
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <StatCard
-            title="GitHub"
-            subtitle={github?.username ? `@${github.username}` : "Not available"}
-            link={
-              github?.profileUrl
-                ? { label: "Open", href: github.profileUrl }
-                : undefined
-            }
-            items={[
-              { label: "Projects", value: github?.publicRepos ?? 0 },
-              { label: "Followers", value: github?.followers ?? 0 },
-              { label: "Status", value: github ? "Live" : "N/A" },
-            ]}
-          />
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white">
+              Hi, I’m{" "}
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Vishwa Nadeen
+              </span>
+            </h1>
 
-          <StatCard
-            title="YouTube"
-            subtitle={youtube?.title ? youtube.title : "Not available"}
-            items={[
-              { label: "Subscribers", value: youtube?.subscribers ?? 0 },
-              { label: "Videos", value: youtube?.videoCount ?? 0 },
-              { label: "Views", value: youtube?.viewCount ?? 0 },
-            ]}
-          />
-        </div>
+            {/* BIO */}
+            <p className="text-base md:text-lg text-slate-300 max-w-2xl leading-relaxed">
+              I’m a passionate developer from Sri Lanka who enjoys building modern
+              web applications and learning new technologies. I focus on creating
+              clean, efficient, and user-friendly digital experiences while
+              continuously improving my skills in full-stack development.
+            </p>
 
-        {/* optional: show last fetch time */}
-        <p className="text-sm opacity-60">
-          Updated:{" "}
-          {stats?.fetchedAt?.github
-            ? new Date(stats.fetchedAt.github).toLocaleString()
-            : "—"}
-        </p>
-      </section>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Link
+                href="/projects"
+                className="group inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-all duration-300 hover:opacity-95 hover:shadow-[0_0_0_6px_rgba(34,211,238,0.12)]"
+              >
+                View Projects
+                <span className="ml-2 transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              </Link>
 
-      {/* FEATURED PROJECTS */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">Featured Projects</h2>
-          <Link className="text-sm underline opacity-80 hover:opacity-100" href="/projects">
-            View all
-          </Link>
-        </div>
+              <Link
+                href="/contact"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-800 bg-slate-900/40 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:bg-slate-800/60"
+              >
+                Contact
+              </Link>
+            </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
-          {featured.map((p) => (
-            <ProjectCard key={p.title} project={p} />
-          ))}
-        </div>
-      </section>
-    </div>
+          </div>
+        </section>
+
+
+        {/* LIVE STATS */}
+        <section className="space-y-5">
+
+          <h2 className="text-xl font-semibold text-white">Live Stats</h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-1 transition-all duration-300 hover:bg-slate-900/30 hover:-translate-y-0.5">
+              <div className="rounded-2xl p-3">
+                <StatCard
+                  title="GitHub"
+                  subtitle={github?.username ? `@${github.username}` : "Not available"}
+                  link={
+                    github?.profileUrl
+                      ? { label: "Open", href: github.profileUrl }
+                      : undefined
+                  }
+                  items={[
+                    { label: "Projects", value: github?.publicRepos ?? 0 },
+                    { label: "Followers", value: github?.followers ?? 0 },
+                    { label: "Status", value: github ? "Live" : "N/A" },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-1 transition-all duration-300 hover:bg-slate-900/30 hover:-translate-y-0.5">
+              <div className="rounded-2xl p-3">
+                <StatCard
+                  title="YouTube"
+                  subtitle={youtube?.title ? youtube.title : "Not available"}
+                  items={[
+                    { label: "Subscribers", value: youtube?.subscribers ?? 0 },
+                    { label: "Videos", value: youtube?.videoCount ?? 0 },
+                    { label: "Views", value: youtube?.viewCount ?? 0 },
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+
+        {/* FEATURED PROJECTS */}
+        <section className="space-y-5">
+          <div className="flex items-center justify-between gap-3">
+
+            <h2 className="text-xl font-semibold text-white">
+              Featured Projects
+            </h2>
+
+            <Link
+              className="text-sm text-slate-300 hover:text-white transition-colors duration-300"
+              href="/projects"
+            >
+              View all →
+            </Link>
+
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {featured.map((p, i) => (
+              <div
+                key={p.title}
+                className="rounded-2xl border border-slate-800 bg-slate-950/40 p-1 transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/30"
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
+                <div
+                  className="rounded-2xl p-3 fade-up"
+                  style={{ animationDelay: `${150 + i * 90}ms` }}
+                >
+                  <ProjectCard project={p} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </section>
+
+      </div>
+    </main>
   );
 }
