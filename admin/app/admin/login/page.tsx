@@ -19,7 +19,7 @@ export default function AdminLoginPage() {
     try {
       const data = await adminLogin(username, password);
       localStorage.setItem("admin_token", data.token);
-      router.push("/admin/projects");
+      router.push("/admin/dashboard");
     } catch {
       setErr("Invalid username or password");
     } finally {
