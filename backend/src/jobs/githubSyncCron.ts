@@ -5,8 +5,8 @@ export function startGitHubSyncCron() {
   // ✅ run once when server starts
   (async () => {
     try {
-      const result = await syncGitHubProjectsToDb();
-      console.log("✅ GitHub initial sync:", result);
+      await syncGitHubProjectsToDb();
+      console.log("GitHub initial sync completed ✅ ");
     } catch (err: any) {
       console.error("❌ GitHub initial sync failed:", err?.message || err);
     }
@@ -15,8 +15,8 @@ export function startGitHubSyncCron() {
   // ✅ every 6 hours
   cron.schedule("0 */6 * * *", async () => {
     try {
-      const result = await syncGitHubProjectsToDb();
-      console.log("✅ GitHub auto-sync success:", result);
+      await syncGitHubProjectsToDb();
+      console.log("GitHub auto-sync completed ✅");
     } catch (err: any) {
       console.error("❌ GitHub auto-sync failed:", err?.message || err);
     }
