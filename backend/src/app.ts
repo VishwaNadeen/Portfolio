@@ -15,28 +15,37 @@ const app = express();
 
 app.use(helmet());
 
+// ---------- CORS (FIXED) ----------
 const allowedOrigins = (process.env.CORS_ORIGINS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      // allow server-to-server / curl / postman (no origin)
-      if (!origin) return cb(null, true);
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, cb) => {
+    // allow server-to-server / curl / postman (no origin header)
+    if (!origin) return cb(null, true);
 
-      // allow if in list
-      if (allowedOrigins.includes(origin)) return cb(null, true);
+    // allow if in list
+    if (allowedOrigins.includes(origin)) return cb(null, true);
 
-      return cb(new Error(`CORS blocked for origin: ${origin}`));
-    },
-    credentials: true,
-  })
-);
+    // block others
+    return cb(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+
+// IMPORTANT: handle preflight for ALL routes
+app.options(/.*/, cors(corsOptions));
+// ---------------------------------
 
 app.use(express.json({ limit: "1mb" }));
 
+// basic rate limit (avoid spam)
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -53,5 +62,23 @@ app.use("/api/stats", statsRoutes);
 app.use("/api/github", githubWebhookRoutes);
 
 app.use("/api/admin", adminRoutes);
+
+// ---------- Error handler (so CORS errors return clean JSON) ----------
+app.use(
+  (
+    err: any,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction
+  ) => {
+    // CORS blocked error
+    if (typeof err?.message === "string" && err.message.startsWith("CORS blocked")) {
+      return res.status(403).json({ message: err.message });
+    }
+
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+);
 
 export default app;
