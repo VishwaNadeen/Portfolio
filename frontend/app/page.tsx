@@ -2,6 +2,7 @@ import Link from "next/link";
 import ProjectCard from "../components/projectCard";
 import StatCard from "../components/statCard";
 import { getLatestStats, getFeaturedGitHubProjects } from "../lib/api";
+import GithubLanguages from "@/components/GithubLanguages";
 
 type StatsResponse = {
   github: null | {
@@ -114,6 +115,22 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* GITHUB LANGUAGES */}
+        <section className="space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-white">Languages</h2>
+            <span className="text-sm text-slate-300">
+              GitHub usage as percentage
+            </span>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-1 transition-all duration-300 hover:bg-slate-900/30">
+            <div className="rounded-2xl p-3 fade-up">
+              <GithubLanguages />
+            </div>
+          </div>
+        </section>
+
         {/* FEATURED PROJECTS */}
         <section className="space-y-5">
           <div className="flex items-center justify-between gap-3">
@@ -129,36 +146,36 @@ export default async function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-4">
             {featured.map((p: any, i: number) => {
-  const techArr =
-    Array.isArray(p.tech) && p.tech.length
-      ? p.tech
-      : Array.isArray(p.topics) && p.topics.length
-      ? p.topics
-      : [p.language].filter(Boolean);
+              const techArr =
+                Array.isArray(p.tech) && p.tech.length
+                  ? p.tech
+                  : Array.isArray(p.topics) && p.topics.length
+                  ? p.topics
+                  : [p.language].filter(Boolean);
 
-  const mapped = {
-    title: p.customTitle || p.name,
-    description: p.customDescription || p.description || "",
-    tech: techArr, // ✅ IMPORTANT (ProjectCard uses project.tech.map)
-    url: p.htmlUrl, // or "href" depending on your ProjectCard
-    liveUrl: p.liveUrl || "",
-  };
+              const mapped = {
+                title: p.customTitle || p.name,
+                description: p.customDescription || p.description || "",
+                tech: techArr, // ✅ IMPORTANT (ProjectCard uses project.tech.map)
+                url: p.htmlUrl, // or "href" depending on your ProjectCard
+                liveUrl: p.liveUrl || "",
+              };
 
-  return (
-    <div
-      key={p._id || p.repoId || mapped.title}
-      className="rounded-2xl border border-slate-800 bg-slate-950/40 p-1 transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/30"
-      style={{ animationDelay: `${i * 80}ms` }}
-    >
-      <div
-        className="rounded-2xl p-3 fade-up"
-        style={{ animationDelay: `${150 + i * 90}ms` }}
-      >
-        <ProjectCard project={mapped as any} />
-      </div>
-    </div>
-  );
-})}
+              return (
+                <div
+                  key={p._id || p.repoId || mapped.title}
+                  className="rounded-2xl border border-slate-800 bg-slate-950/40 p-1 transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900/30"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
+                  <div
+                    className="rounded-2xl p-3 fade-up"
+                    style={{ animationDelay: `${150 + i * 90}ms` }}
+                  >
+                    <ProjectCard project={mapped as any} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       </div>
