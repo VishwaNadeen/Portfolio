@@ -7,5 +7,5 @@ export async function connectDB(uri: string) {
     dbName: "Portfolio", //Force DB name
   });
 
-  console.log("MongoDB is connected ✅ DB:", mongoose.connection.name);
+  console.log("MongoDB is connected DB:", mongoose.connection.name + " ✅");
 }

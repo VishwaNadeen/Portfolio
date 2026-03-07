@@ -21,7 +21,7 @@ connectDB(MONGODB_URI)
 
     app.listen(PORT, () => {
       console.log(`Server is running on ${PORT} ✅ `);
-      console.log("Allowed CORS Origins:", process.env.CORS_ORIGINS || "(none)");
+      console.log("Allowed CORS Origins: ", process.env.CORS_ORIGINS  + " ✅"|| "(none) ✅");
     });
   })
   .catch((err) => {
