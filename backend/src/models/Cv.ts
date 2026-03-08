@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface ICv extends Document {
   filename: string;
@@ -40,4 +40,7 @@ const CvSchema = new Schema<ICv>(
   }
 );
 
-export default mongoose.models.Cv || mongoose.model<ICv>("Cv", CvSchema);
+const Cv: Model<ICv> =
+  mongoose.models.Cv || mongoose.model<ICv>("Cv", CvSchema);
+
+export default Cv;

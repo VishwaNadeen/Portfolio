@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import multer from "multer";
-import Cv from "../models/Cv";
+import Cv, { ICv } from "../models/Cv";
 import { adminAuth } from "../middleware/adminAuth";
 
 const router = express.Router();
@@ -29,7 +29,7 @@ const upload = multer({
   },
 });
 
-function mapCv(cv: any) {
+function mapCv(cv: ICv) {
   return {
     _id: String(cv._id),
     filename: cv.filename,
@@ -39,6 +39,17 @@ function mapCv(cv: any) {
     viewUrl: "/api/cv/public/view",
     downloadUrl: "/api/cv/public/download",
   };
+}
+
+function runUpload(req: Request, res: Response): Promise<void> {
+  return new Promise((resolve, reject) => {
+    upload.single("cv")(req, res, (err: any) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve();
+    });
+  });
 }
 
 /**
@@ -54,9 +65,7 @@ router.get("/test", (_req: Request, res: Response) => {
  */
 router.get("/public", async (_req: Request, res: Response) => {
   try {
-    const cv = await Cv.findOne({})
-      .sort({ uploadedAt: -1 })
-      .exec();
+    const cv = await Cv.findOne({}, null, { sort: { uploadedAt: -1 } }).exec();
 
     if (!cv) {
       return res.status(404).json({ message: "CV not found" });
@@ -73,9 +82,7 @@ router.get("/public", async (_req: Request, res: Response) => {
  */
 router.get("/public/view", async (_req: Request, res: Response) => {
   try {
-    const cv = await Cv.findOne({})
-      .sort({ uploadedAt: -1 })
-      .exec();
+    const cv = await Cv.findOne({}, null, { sort: { uploadedAt: -1 } }).exec();
 
     if (!cv) {
       return res.status(404).json({ message: "CV not found" });
@@ -96,9 +103,7 @@ router.get("/public/view", async (_req: Request, res: Response) => {
  */
 router.get("/public/download", async (_req: Request, res: Response) => {
   try {
-    const cv = await Cv.findOne({})
-      .sort({ uploadedAt: -1 })
-      .exec();
+    const cv = await Cv.findOne({}, null, { sort: { uploadedAt: -1 } }).exec();
 
     if (!cv) {
       return res.status(404).json({ message: "CV not found" });
@@ -122,9 +127,7 @@ router.get("/public/download", async (_req: Request, res: Response) => {
  */
 router.get("/admin", adminAuth, async (_req: Request, res: Response) => {
   try {
-    const cv = await Cv.findOne({})
-      .sort({ uploadedAt: -1 })
-      .exec();
+    const cv = await Cv.findOne({}, null, { sort: { uploadedAt: -1 } }).exec();
 
     if (!cv) {
       return res.json(null);
@@ -135,20 +138,6 @@ router.get("/admin", adminAuth, async (_req: Request, res: Response) => {
     return res.status(500).json({ message: "Failed to fetch CV" });
   }
 });
-
-/**
- * helper for multer single upload
- */
-function runUpload(req: Request, res: Response): Promise<void> {
-  return new Promise((resolve, reject) => {
-    upload.single("cv")(req, res, (err: any) => {
-      if (err) {
-        return reject(err);
-      }
-      resolve();
-    });
-  });
-}
 
 /**
  * ADMIN - upload new CV
@@ -163,7 +152,6 @@ router.post("/admin", adminAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ message: "CV file is required" });
     }
 
-    // keep only one CV
     await Cv.deleteMany({}).exec();
 
     const newCv = await Cv.create({
