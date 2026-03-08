@@ -6,7 +6,7 @@ import { connectDB } from "./config/db";
 import { startStatsCron } from "./jobs/statsCron";
 import { startGitHubSyncCron } from "./jobs/githubSyncCron";
 
-const PORT = Number(process.env.PORT || 5000);
+const PORT = Number(process.env.PORT || 5001);
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {

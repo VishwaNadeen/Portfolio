@@ -10,6 +10,7 @@ import githubRoutes from "./routes/githubRoutes";
 import statsRoutes from "./routes/statsRoutes";
 import githubWebhookRoutes from "./routes/githubWebhookRoutes";
 import adminRoutes from "./routes/adminRoutes";
+import cvRoutes from "./routes/cvRoutes";
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use("/api/stats", statsRoutes);
 app.use("/api/github", githubWebhookRoutes);
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/cv", cvRoutes);
 
 // ---------- Error handler (so CORS errors return clean JSON) ----------
 app.use(

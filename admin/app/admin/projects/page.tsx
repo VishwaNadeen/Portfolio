@@ -10,7 +10,7 @@ import {
   adminSyncGitHub,
   adminUpdateProject,
   type AdminGitHubProject,
-} from "../../../lib/adminApi";
+} from "../lib/adminApi";
 
 export default function AdminProjectsPage() {
   const router = useRouter();

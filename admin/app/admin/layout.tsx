@@ -28,6 +28,14 @@ export default function AdminLayout({
             >
               Projects
             </Link>
+              
+            <Link
+            className="block rounded-xl px-3 py-2 hover:bg-slate-900"
+            href="/admin/cv"
+            >
+            CV Management
+            </Link>
+
           </nav>
 
           {/* Logout */}
