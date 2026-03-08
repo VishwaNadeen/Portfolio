@@ -1,21 +1,31 @@
+import AboutHero from "@/components/about/AboutHero";
+import AboutEducation from "@/components/about/AboutEducation";
+import AboutJourney from "@/components/about/AboutJourney";
+import AboutSkills from "@/components/about/AboutSkills";
+import AboutInterests from "@/components/about/AboutInterests";
+import PageTransition from "@/components/PageTransition";
+import FloatingCvButton from "@/components/about/FloatingCvButton";
+import ScrollToTop from "@/components/about/ScrollToTop";
+
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 space-y-4">
-      <h1 className="text-3xl font-bold">About</h1>
-      <p className="opacity-80 max-w-2xl">
-        I’m a developer focused on building practical, user-friendly systems.
-        I enjoy working with Next.js, Node.js, MongoDB, and modern UI design.
-      </p>
+    <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
+      <PageTransition>
+        <main>
+          <div className="relative z-10 mx-auto max-w-5xl space-y-12 px-4 py-12">
+            <AboutHero />
+            <AboutEducation />
+            <AboutJourney />
+            <AboutSkills />
+            <AboutInterests />
+          </div>
+        </main>
+      </PageTransition>
 
-      <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Skills</h2>
-        <ul className="list-disc pl-5 opacity-80">
-          <li>Next.js / React / TypeScript</li>
-          <li>Node.js / Express</li>
-          <li>MongoDB / MySQL</li>
-          <li>Tailwind CSS</li>
-        </ul>
-      </div>
-    </div>
+      
+
+      <FloatingCvButton />
+      <ScrollToTop />
+    </main>
   );
 }
