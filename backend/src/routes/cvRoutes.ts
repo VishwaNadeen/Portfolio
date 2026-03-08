@@ -24,6 +24,7 @@ const upload = multer({
         new Error("Only PDF, JPG, JPEG, PNG, and WEBP files are allowed")
       );
     }
+
     cb(null, true);
   },
 });
@@ -53,7 +54,9 @@ router.get("/test", (_req: Request, res: Response) => {
  */
 router.get("/public", async (_req: Request, res: Response) => {
   try {
-    const cv = await Cv.findOne().sort({ uploadedAt: -1 });
+    const cv = await Cv.findOne({})
+      .sort({ uploadedAt: -1 })
+      .exec();
 
     if (!cv) {
       return res.status(404).json({ message: "CV not found" });
@@ -70,14 +73,16 @@ router.get("/public", async (_req: Request, res: Response) => {
  */
 router.get("/public/view", async (_req: Request, res: Response) => {
   try {
-    const cv = await Cv.findOne().sort({ uploadedAt: -1 });
+    const cv = await Cv.findOne({})
+      .sort({ uploadedAt: -1 })
+      .exec();
 
     if (!cv) {
       return res.status(404).json({ message: "CV not found" });
     }
 
     res.setHeader("Content-Type", cv.contentType);
-    res.setHeader("Content-Length", cv.size.toString());
+    res.setHeader("Content-Length", String(cv.size));
     res.setHeader("Content-Disposition", `inline; filename="${cv.filename}"`);
 
     return res.send(cv.data);
@@ -91,14 +96,16 @@ router.get("/public/view", async (_req: Request, res: Response) => {
  */
 router.get("/public/download", async (_req: Request, res: Response) => {
   try {
-    const cv = await Cv.findOne().sort({ uploadedAt: -1 });
+    const cv = await Cv.findOne({})
+      .sort({ uploadedAt: -1 })
+      .exec();
 
     if (!cv) {
       return res.status(404).json({ message: "CV not found" });
     }
 
     res.setHeader("Content-Type", cv.contentType);
-    res.setHeader("Content-Length", cv.size.toString());
+    res.setHeader("Content-Length", String(cv.size));
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${cv.filename}"`
@@ -115,7 +122,9 @@ router.get("/public/download", async (_req: Request, res: Response) => {
  */
 router.get("/admin", adminAuth, async (_req: Request, res: Response) => {
   try {
-    const cv = await Cv.findOne().sort({ uploadedAt: -1 });
+    const cv = await Cv.findOne({})
+      .sort({ uploadedAt: -1 })
+      .exec();
 
     if (!cv) {
       return res.json(null);
@@ -128,113 +137,127 @@ router.get("/admin", adminAuth, async (_req: Request, res: Response) => {
 });
 
 /**
+ * helper for multer single upload
+ */
+function runUpload(req: Request, res: Response): Promise<void> {
+  return new Promise((resolve, reject) => {
+    upload.single("cv")(req, res, (err: any) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve();
+    });
+  });
+}
+
+/**
  * ADMIN - upload new CV
  */
-router.post("/admin", adminAuth, (req, res) => {
-  upload.single("cv")(req, res, async (err: any) => {
-    try {
-      if (err instanceof multer.MulterError) {
-        if (err.code === "LIMIT_FILE_SIZE") {
-          return res
-            .status(400)
-            .json({ message: "File size must be 5MB or less" });
-        }
+router.post("/admin", adminAuth, async (req: Request, res: Response) => {
+  try {
+    await runUpload(req, res);
 
-        return res.status(400).json({
-          message: err.message || "Upload failed",
-        });
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "CV file is required" });
+    }
+
+    // keep only one CV
+    await Cv.deleteMany({}).exec();
+
+    const newCv = await Cv.create({
+      filename: file.originalname,
+      contentType: file.mimetype,
+      size: file.size,
+      data: file.buffer,
+      uploadedAt: new Date(),
+    });
+
+    return res.status(201).json({
+      message: "CV uploaded successfully",
+      cv: mapCv(newCv),
+    });
+  } catch (err: any) {
+    if (err instanceof multer.MulterError) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res
+          .status(400)
+          .json({ message: "File size must be 5MB or less" });
       }
 
-      if (err) {
-        return res.status(400).json({
-          message: err.message || "Invalid file upload",
-        });
-      }
-
-      const file = req.file;
-
-      if (!file) {
-        return res.status(400).json({ message: "CV file is required" });
-      }
-
-      // keep only one CV
-      await Cv.deleteMany({});
-
-      const newCv = await Cv.create({
-        filename: file.originalname,
-        contentType: file.mimetype,
-        size: file.size,
-        data: file.buffer,
-        uploadedAt: new Date(),
-      });
-
-      return res.status(201).json({
-        message: "CV uploaded successfully",
-        cv: mapCv(newCv),
-      });
-    } catch (error: any) {
-      return res.status(500).json({
-        message: error?.message || "Failed to upload CV",
+      return res.status(400).json({
+        message: err.message || "Upload failed",
       });
     }
-  });
+
+    if (err instanceof Error) {
+      return res.status(400).json({
+        message: err.message || "Invalid file upload",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to upload CV",
+    });
+  }
 });
 
 /**
  * ADMIN - replace current CV
  */
-router.put("/admin/:id", adminAuth, (req, res) => {
-  upload.single("cv")(req, res, async (err: any) => {
-    try {
-      if (err instanceof multer.MulterError) {
-        if (err.code === "LIMIT_FILE_SIZE") {
-          return res
-            .status(400)
-            .json({ message: "File size must be 5MB or less" });
-        }
+router.put("/admin/:id", adminAuth, async (req: Request, res: Response) => {
+  try {
+    await runUpload(req, res);
 
-        return res.status(400).json({
-          message: err.message || "Upload failed",
-        });
+    const { id } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "CV file is required" });
+    }
+
+    const existingCv = await Cv.findById(id).exec();
+
+    if (!existingCv) {
+      return res.status(404).json({ message: "CV not found" });
+    }
+
+    existingCv.filename = file.originalname;
+    existingCv.contentType = file.mimetype;
+    existingCv.size = file.size;
+    existingCv.data = file.buffer;
+    existingCv.uploadedAt = new Date();
+
+    await existingCv.save();
+
+    return res.json({
+      message: "CV replaced successfully",
+      cv: mapCv(existingCv),
+    });
+  } catch (err: any) {
+    if (err instanceof multer.MulterError) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res
+          .status(400)
+          .json({ message: "File size must be 5MB or less" });
       }
 
-      if (err) {
-        return res.status(400).json({
-          message: err.message || "Invalid file upload",
-        });
-      }
-
-      const { id } = req.params;
-      const file = req.file;
-
-      if (!file) {
-        return res.status(400).json({ message: "CV file is required" });
-      }
-
-      const existingCv = await Cv.findById(id);
-
-      if (!existingCv) {
-        return res.status(404).json({ message: "CV not found" });
-      }
-
-      existingCv.filename = file.originalname;
-      existingCv.contentType = file.mimetype;
-      existingCv.size = file.size;
-      existingCv.data = file.buffer;
-      existingCv.uploadedAt = new Date();
-
-      await existingCv.save();
-
-      return res.json({
-        message: "CV replaced successfully",
-        cv: mapCv(existingCv),
-      });
-    } catch (error: any) {
-      return res.status(500).json({
-        message: error?.message || "Failed to update CV",
+      return res.status(400).json({
+        message: err.message || "Upload failed",
       });
     }
-  });
+
+    if (err instanceof Error) {
+      return res.status(400).json({
+        message: err.message || "Invalid file upload",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to update CV",
+    });
+  }
 });
 
 /**
@@ -244,7 +267,7 @@ router.delete("/admin/:id", adminAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const deletedCv = await Cv.findByIdAndDelete(id);
+    const deletedCv = await Cv.findByIdAndDelete(id).exec();
 
     if (!deletedCv) {
       return res.status(404).json({ message: "CV not found" });

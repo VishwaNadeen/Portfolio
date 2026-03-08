@@ -1,9 +1,9 @@
 import ProjectCard from "../components/projectCard";
-import StatCard from "../components/statCard";
 import { getLatestStats, getFeaturedGitHubProjects } from "../lib/api";
 import GithubLanguages from "@/components/GithubLanguages";
 import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
+import LiveStatsSection from "@/components/LiveStatsSection";
 
 type StatsResponse = {
   github: null | {
@@ -25,10 +25,7 @@ type StatsResponse = {
 
 export default async function HomePage() {
   const featured = await getFeaturedGitHubProjects(3);
-
   const stats = (await getLatestStats()) as StatsResponse | null;
-  const github = stats?.github ?? null;
-  const youtube = stats?.youtube ?? null;
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
@@ -37,33 +34,7 @@ export default async function HomePage() {
         <HeroSection />
 
         {/* LIVE STATS */}
-        <section className="space-y-5">
-          <h2 className="text-xl font-semibold text-white">Live Stats</h2>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <StatCard
-              title="GitHub"
-              subtitle={github?.username ? `@${github.username}` : "Not available"}
-              link={github?.profileUrl}
-              items={[
-                { label: "Projects", value: github?.publicRepos ?? 0 },
-                { label: "Followers", value: github?.followers ?? 0 },
-                { label: "Status", value: github ? "Live" : "N/A" },
-              ]}
-            />
-
-            <StatCard
-              title="YouTube"
-              subtitle={youtube?.title || "Not available"}
-              link={youtube?.channelUrl}
-              items={[
-                { label: "Subscribers", value: youtube?.subscribers ?? 0 },
-                { label: "Videos", value: youtube?.videoCount ?? 0 },
-                { label: "Views", value: youtube?.viewCount ?? 0 },
-              ]}
-            />
-          </div>
-        </section>
+        <LiveStatsSection stats={stats} />
 
         {/* GITHUB LANGUAGES */}
         <section className="space-y-5">
@@ -131,4 +102,3 @@ export default async function HomePage() {
     </main>
   );
 }
-
