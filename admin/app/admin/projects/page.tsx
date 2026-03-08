@@ -43,7 +43,6 @@ export default function AdminProjectsPage() {
   }
 
   useEffect(() => {
-    // extra guard (RequireAuth already does it, but this avoids flicker sometimes)
     const token = localStorage.getItem("admin_token");
     if (!token) {
       router.replace("/admin/login");
@@ -51,7 +50,6 @@ export default function AdminProjectsPage() {
     }
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const visibleCount = useMemo(
@@ -66,12 +64,7 @@ export default function AdminProjectsPage() {
     try {
       await adminSyncGitHub();
       await load();
-    } catch (e: any) {
-      if (String(e?.message).toUpperCase().includes("UNAUTHORIZED")) {
-        adminLogout();
-        router.replace("/admin/login");
-        return;
-      }
+    } catch {
       setError("Sync failed");
     } finally {
       setSyncing(false);
@@ -79,7 +72,6 @@ export default function AdminProjectsPage() {
   }
 
   async function quickToggle(id: string, patch: Partial<AdminGitHubProject>) {
-    // optimistic UI
     setItems((prev) => prev.map((p) => (p._id === id ? { ...p, ...patch } : p)));
 
     try {
@@ -105,16 +97,13 @@ export default function AdminProjectsPage() {
         customTitle: editing.customTitle || "",
         customDescription: editing.customDescription || "",
         liveUrl: editing.liveUrl || "",
+        type: editing.type || "",
+        platform: editing.platform || "",
       });
 
       setItems((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
       setEditing(null);
-    } catch (e: any) {
-      if (String(e?.message).toUpperCase().includes("UNAUTHORIZED")) {
-        adminLogout();
-        router.replace("/admin/login");
-        return;
-      }
+    } catch {
       setError("Save failed");
     } finally {
       setSaving(false);
@@ -146,7 +135,6 @@ export default function AdminProjectsPage() {
               {syncing ? "Syncing..." : "Sync GitHub"}
             </button>
 
-            {/* Optional: keep your old “New Project” page */}
             <Link
               href="/admin/projects/new"
               className="rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 text-sm font-semibold text-slate-950"
@@ -273,10 +261,39 @@ export default function AdminProjectsPage() {
               </div>
 
               <div className="mt-4 space-y-3">
+
+                {/* NEW FIELD */}
+                <label className="block text-xs text-slate-400">
+                  Project Type
+                  <input
+                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white"
+                    value={editing.type || ""}
+                    onChange={(e) =>
+                      setEditing((prev) =>
+                        prev ? { ...prev, type: e.target.value } : prev
+                      )
+                    }
+                  />
+                </label>
+
+                {/* NEW FIELD */}
+                <label className="block text-xs text-slate-400">
+                  Platform
+                  <input
+                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white"
+                    value={editing.platform || ""}
+                    onChange={(e) =>
+                      setEditing((prev) =>
+                        prev ? { ...prev, platform: e.target.value } : prev
+                      )
+                    }
+                  />
+                </label>
+
                 <label className="block text-xs text-slate-400">
                   Custom Title
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500/50"
+                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white"
                     value={editing.customTitle || ""}
                     onChange={(e) =>
                       setEditing((prev) =>
@@ -289,7 +306,7 @@ export default function AdminProjectsPage() {
                 <label className="block text-xs text-slate-400">
                   Custom Description
                   <textarea
-                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500/50"
+                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white"
                     rows={4}
                     value={editing.customDescription || ""}
                     onChange={(e) =>
@@ -303,7 +320,7 @@ export default function AdminProjectsPage() {
                 <label className="block text-xs text-slate-400">
                   Live URL
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500/50"
+                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white"
                     value={editing.liveUrl || ""}
                     onChange={(e) =>
                       setEditing((prev) =>
@@ -313,69 +330,33 @@ export default function AdminProjectsPage() {
                   />
                 </label>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="block text-xs text-slate-400">
-                    Display Order
-                    <input
-                      type="number"
-                      className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500/50"
-                      value={editing.displayOrder}
-                      onChange={(e) =>
-                        setEditing((prev) =>
-                          prev ? { ...prev, displayOrder: Number(e.target.value) } : prev
-                        )
-                      }
-                    />
-                  </label>
-
-                  <div className="flex items-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEditing((prev) =>
-                          prev ? { ...prev, featured: !prev.featured } : prev
-                        )
-                      }
-                      className={`w-full rounded-xl px-3 py-2 text-sm font-semibold ${
-                        editing.featured
-                          ? "bg-cyan-500/20 text-cyan-200 border border-cyan-500/30"
-                          : "bg-slate-900/40 text-white border border-slate-800"
-                      }`}
-                    >
-                      {editing.featured ? "Featured" : "Not featured"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEditing((prev) =>
-                          prev ? { ...prev, isHidden: !prev.isHidden } : prev
-                        )
-                      }
-                      className={`w-full rounded-xl px-3 py-2 text-sm font-semibold ${
-                        editing.isHidden
-                          ? "bg-yellow-500/15 text-yellow-200 border border-yellow-500/30"
-                          : "bg-slate-900/40 text-white border border-slate-800"
-                      }`}
-                    >
-                      {editing.isHidden ? "Hidden" : "Visible"}
-                    </button>
-                  </div>
-                </div>
+                <label className="block text-xs text-slate-400">
+                  Display Order
+                  <input
+                    type="number"
+                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-white"
+                    value={editing.displayOrder}
+                    onChange={(e) =>
+                      setEditing((prev) =>
+                        prev ? { ...prev, displayOrder: Number(e.target.value) } : prev
+                      )
+                    }
+                  />
+                </label>
               </div>
 
               <div className="mt-5 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setEditing(null)}
-                  className="rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800/60"
+                  className="rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-sm font-semibold text-white"
                 >
                   Cancel
                 </button>
 
                 <button
                   disabled={saving}
-                  className="rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-60"
+                  className="rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 text-sm font-semibold text-slate-950"
                 >
                   {saving ? "Saving..." : "Save"}
                 </button>

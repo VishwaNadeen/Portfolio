@@ -17,7 +17,6 @@ export interface IGitHubProject {
   updatedAtGithub?: Date;
   pushedAt?: Date;
 
-  // ✅ NEW: private/public from GitHub
   isPrivate: boolean;
 
   featured: boolean;
@@ -27,6 +26,10 @@ export interface IGitHubProject {
   customTitle?: string;
   customDescription?: string;
   liveUrl?: string;
+
+  // NEW
+  type?: string;
+  platform?: string;
 }
 
 const GitHubProjectSchema = new Schema<IGitHubProject>(
@@ -47,16 +50,19 @@ const GitHubProjectSchema = new Schema<IGitHubProject>(
     updatedAtGithub: { type: Date },
     pushedAt: { type: Date },
 
-    // ✅ NEW
     isPrivate: { type: Boolean, default: false, index: true },
 
     featured: { type: Boolean, default: false, index: true },
     displayOrder: { type: Number, default: 9999, index: true },
     isHidden: { type: Boolean, default: false, index: true },
 
-    customTitle: { type: String, trim: true },
-    customDescription: { type: String, trim: true },
-    liveUrl: { type: String, trim: true },
+    customTitle: { type: String, trim: true, default: "" },
+    customDescription: { type: String, trim: true, default: "" },
+    liveUrl: { type: String, trim: true, default: "" },
+
+    // NEW
+    type: { type: String, trim: true, default: "" },
+    platform: { type: String, trim: true, default: "" },
   },
   { timestamps: true }
 );

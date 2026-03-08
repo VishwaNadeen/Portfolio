@@ -5,13 +5,13 @@ import { syncGitHubProjectsToDb } from "../jobs/githubSyncJob";
 const router = Router();
 
 /**
- * ✅ Public-only filter (private repos never show)
+ * Public-only filter (private repos never show)
  */
 const PUBLIC_FILTER = { isHidden: false, isPrivate: false };
 
 /**
  * GET /api/github/projects
- * (DB → public projects only)
+ * DB -> public projects only
  */
 router.get("/projects", async (_req, res) => {
   try {
@@ -27,8 +27,8 @@ router.get("/projects", async (_req, res) => {
 });
 
 /**
- * ✅ GET /api/github/featured?limit=3
- * Home page Featured Projects → latest 3 public projects
+ * GET /api/github/featured?limit=3
+ * Home page Featured Projects -> latest public projects
  */
 router.get("/featured", async (req, res) => {
   try {
@@ -52,7 +52,7 @@ router.get("/featured", async (req, res) => {
 
 /**
  * POST /api/github/sync
- * ✅ Uses shared job (same logic used by cron)
+ * Uses shared job (same logic used by cron)
  */
 router.post("/sync", async (_req, res) => {
   try {

@@ -26,6 +26,10 @@ export type AdminGitHubProject = {
   customDescription?: string;
   liveUrl?: string;
 
+  // NEW
+  type?: string;
+  platform?: string;
+
   createdAt: string;
   updatedAt: string;
 };
@@ -48,6 +52,7 @@ export async function adminLogin(username: string, password: string) {
 
 export async function adminGetProjects(): Promise<AdminGitHubProject[]> {
   const token = getToken();
+
   const res = await fetch(`${API_BASE}/api/admin/projects`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
@@ -55,17 +60,28 @@ export async function adminGetProjects(): Promise<AdminGitHubProject[]> {
 
   if (res.status === 401) throw new Error("unauthorized");
   if (!res.ok) throw new Error("Failed to load projects");
+
   return res.json();
 }
 
 export async function adminUpdateProject(
   id: string,
-  patch: Partial<Pick<
-    AdminGitHubProject,
-    "featured" | "displayOrder" | "isHidden" | "customTitle" | "customDescription" | "liveUrl"
-  >>
+  patch: Partial<
+    Pick<
+      AdminGitHubProject,
+      | "featured"
+      | "displayOrder"
+      | "isHidden"
+      | "customTitle"
+      | "customDescription"
+      | "liveUrl"
+      | "type"
+      | "platform"
+    >
+  >
 ) {
   const token = getToken();
+
   const res = await fetch(`${API_BASE}/api/admin/projects/${id}`, {
     method: "PATCH",
     headers: {
@@ -77,11 +93,13 @@ export async function adminUpdateProject(
 
   if (res.status === 401) throw new Error("unauthorized");
   if (!res.ok) throw new Error("Update failed");
+
   return res.json() as Promise<AdminGitHubProject>;
 }
 
 export async function adminSyncGitHub() {
   const token = getToken();
+
   const res = await fetch(`${API_BASE}/api/admin/github/sync`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
@@ -89,6 +107,7 @@ export async function adminSyncGitHub() {
 
   if (res.status === 401) throw new Error("unauthorized");
   if (!res.ok) throw new Error("Sync failed");
+
   return res.json();
 }
 

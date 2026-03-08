@@ -30,6 +30,15 @@
   }
 }
 
+@keyframes tech-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 .fade-up {
   animation: fadeUp 650ms ease-out both;
 }
