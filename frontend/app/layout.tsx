@@ -4,8 +4,8 @@ import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 
 export const metadata: Metadata = {
-  title: "Vishwa Nadeen | Portfolio",
-  description: "My portfolio built with Next.js",
+  title: "Vishwa Nadeen",
+  description: "Designed and developed by Vishwa Nadeen.",
 };
 
 export default function RootLayout({

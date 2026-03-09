@@ -6,6 +6,7 @@ import LiveStatsSection from "@/components/LiveStatsSection";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
 import TechStackStrip from "@/components/TechStackStrip";
 import Social3DIcons from "@/components/Social3DIcons";
+import VisitTracker from "@/components/VisitTracker";
 
 type StatsResponse = {
   github: null | {
@@ -67,6 +68,7 @@ export default async function HomePage() {
 
   return (
     <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
+      <VisitTracker />
 
       {/* ── floating code background ── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
@@ -75,11 +77,11 @@ export default async function HomePage() {
             key={i}
             className="absolute select-none font-medium text-cyan-200/[0.18] will-change-transform [font-family:'Fira_Code','Cascadia_Code','JetBrains_Mono',monospace] animate-[float-code_linear_infinite]"
             style={{
-              left:              `${s.x}%`,
-              bottom:            `-${s.size + 2}%`,
-              fontSize:          `${s.size}px`,
+              left: `${s.x}%`,
+              bottom: `-${s.size + 2}%`,
+              fontSize: `${s.size}px`,
               animationDuration: `${s.dur}s`,
-              animationDelay:    `${s.delay}s`,
+              animationDelay: `${s.delay}s`,
             }}
           >
             {s.sym}
@@ -87,17 +89,22 @@ export default async function HomePage() {
         ))}
 
         {/* radial glow layers */}
-        <div className="absolute -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.05)_0%,transparent_70%)]"
-          style={{ top: "10%", left: "60%" }} />
-        <div className="absolute -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.04)_0%,transparent_70%)]"
-          style={{ top: "70%", left: "20%" }} />
-        <div className="absolute -translate-x-1/2 -translate-y-1/2 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(14,165,233,0.035)_0%,transparent_72%)]"
-          style={{ top: "35%", left: "85%" }} />
+        <div
+          className="absolute -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.05)_0%,transparent_70%)]"
+          style={{ top: "10%", left: "60%" }}
+        />
+        <div
+          className="absolute -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.04)_0%,transparent_70%)]"
+          style={{ top: "70%", left: "20%" }}
+        />
+        <div
+          className="absolute -translate-x-1/2 -translate-y-1/2 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(14,165,233,0.035)_0%,transparent_72%)]"
+          style={{ top: "35%", left: "85%" }}
+        />
       </div>
 
       {/* ── page content ── */}
       <div className="relative z-10 mx-auto max-w-5xl space-y-14 px-4 py-12">
-
         <div className="space-y-25">
           <HeroSection />
           <Social3DIcons />
@@ -127,15 +134,15 @@ export default async function HomePage() {
                   : [p.language].filter(Boolean);
 
               const mapped = {
-                title:       p.customTitle || p.name,
+                title: p.customTitle || p.name,
                 description: p.customDescription || p.description || "",
-                tech:        techArr,
-                link:        p.liveUrl || p.htmlUrl || "",
-                githubUrl:   p.htmlUrl || "",
-                type:        p.type || "",
-                platform:    p.platform || "",
-                stars:       p.stars ?? 0,
-                forks:       p.forks ?? 0,
+                tech: techArr,
+                link: p.liveUrl || p.htmlUrl || "",
+                githubUrl: p.htmlUrl || "",
+                type: p.type || "",
+                platform: p.platform || "",
+                stars: p.stars ?? 0,
+                forks: p.forks ?? 0,
               };
 
               return (

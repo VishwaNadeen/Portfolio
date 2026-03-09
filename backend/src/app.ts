@@ -12,6 +12,9 @@ import githubWebhookRoutes from "./routes/githubWebhookRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import cvRoutes from "./routes/cvRoutes";
 
+import adminDashboardRoutes from "./routes/adminDashboardRoutes";
+import visitRoutes from "./routes/visitRoutes";
+
 const app = express();
 
 app.use(helmet());
@@ -64,6 +67,9 @@ app.use("/api/github", githubWebhookRoutes);
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/cv", cvRoutes);
+
+app.use("/api/admin", adminDashboardRoutes);
+app.use("/api/public", visitRoutes);
 
 // ---------- Error handler (so CORS errors return clean JSON) ----------
 app.use(
