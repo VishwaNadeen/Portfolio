@@ -3,6 +3,15 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function escapeHtml(str: string) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -33,30 +42,24 @@ export async function POST(req: Request) {
       );
     }
 
-    const to = process.env.CONTACT_TO_EMAIL;
     const from = process.env.CONTACT_FROM_EMAIL;
+    const to = process.env.CONTACT_TO_EMAIL;
 
-    if (!to || !from || !process.env.RESEND_API_KEY) {
+    if (!from || !to || !process.env.RESEND_API_KEY) {
       return NextResponse.json(
         { message: "Email service is not configured properly." },
         { status: 500 }
       );
     }
 
-    const { error } = await resend.emails.send({
+    const result = await resend.emails.send({
       from,
       to,
-      subject: `New portfolio contact from ${name}`,
+      subject: `New portfolio message from ${name}`,
       replyTo: email,
-      text: `
-Name: ${name}
-Email: ${email}
-
-Message:
-${message}
-      `.trim(),
+      text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <div style="font-family:Arial,sans-serif;line-height:1.6">
           <h2>New Portfolio Contact Message</h2>
           <p><strong>Name:</strong> ${escapeHtml(name)}</p>
           <p><strong>Email:</strong> ${escapeHtml(email)}</p>
@@ -66,7 +69,7 @@ ${message}
       `,
     });
 
-    if (error) {
+    if (result.error) {
       return NextResponse.json(
         { message: "Failed to send email." },
         { status: 500 }
@@ -83,13 +86,4 @@ ${message}
       { status: 500 }
     );
   }
-}
-
-function escapeHtml(str: string) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
 }
