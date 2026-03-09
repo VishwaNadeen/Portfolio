@@ -1,62 +1,78 @@
 import ProjectCard from "../../components/projectCard";
 
-type GitHubRepo = {
-  id: number;
-  name: string;
-  html_url: string;
-  homepage: string | null;
-  description: string | null;
-  language: string | null;
+export const dynamic = "force-dynamic";
+
+type DbProject = {
+  _id?: string;
+  repoId?: number;
+  name?: string;
+  title?: string;
+  description?: string | null;
+  htmlUrl?: string;
+  homepage?: string | null;
+  language?: string | null;
   topics?: string[];
-  stargazers_count: number;
-  forks_count: number;
-  fork: boolean;
-  private: boolean;
+  stars?: number;
+  forks?: number;
+  isHidden?: boolean;
+  isPrivate?: boolean;
+  featured?: boolean;
+  displayOrder?: number;
+  pushedAt?: string;
+  updatedAtGithub?: string;
 };
 
-async function getGitHubRepos(): Promise<GitHubRepo[]> {
-  const username = process.env.GITHUB_USER;
+async function getDatabaseProjects(): Promise<DbProject[]> {
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE;
 
-  if (!username) {
-    throw new Error("GITHUB_USER is not set in environment variables.");
+  if (!apiBase) {
+    console.error("NEXT_PUBLIC_API_BASE is not set.");
+    return [];
   }
 
-  const res = await fetch(
-    `https://api.github.com/users/${username}/repos?sort=updated&per_page=100`,
-    {
-      next: { revalidate: 3600 },
+  try {
+    const res = await fetch(`${apiBase}/api/github/projects`, {
+      cache: "no-store",
       headers: {
-        Accept: "application/vnd.github+json",
+        Accept: "application/json",
       },
+    });
+
+    if (!res.ok) {
+      console.error("Failed to fetch projects from database.");
+      return [];
     }
-  );
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch GitHub repositories.");
+    const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Database projects fetch failed:", error);
+    return [];
   }
-
-  const repos = (await res.json()) as GitHubRepo[];
-
-  return repos
-    .filter((repo) => !repo.private && !repo.fork)
-    .sort((a, b) => b.stargazers_count - a.stargazers_count);
 }
 
 export default async function ProjectsPage() {
-  const repos = await getGitHubRepos();
+  const projects = await getDatabaseProjects();
 
-  const mappedProjects = repos.map((repo) => ({
-    title: repo.name,
-    description: repo.description || "No description available for this repository.",
-    tech: Array.isArray(repo.topics) && repo.topics.length
-      ? repo.topics
-      : [repo.language].filter(Boolean),
-    link: repo.homepage || repo.html_url,
-    githubUrl: repo.html_url,
+  const mappedProjects = projects.map((project) => ({
+    title: project.title || project.name || "Untitled Project",
+    description:
+      project.description || "No description available for this project.",
+    tech:
+      Array.isArray(project.topics) && project.topics.length
+        ? project.topics
+        : [project.language].filter(Boolean),
+    link: project.homepage || project.htmlUrl || "#",
+    githubUrl: project.htmlUrl || "",
     type: "GitHub Repository",
     platform: "GitHub",
-    stars: repo.stargazers_count,
-    forks: repo.forks_count,
+    stars: project.stars ?? 0,
+    forks: project.forks ?? 0,
   }));
 
   return (
@@ -78,16 +94,12 @@ export default async function ProjectsPage() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
-        
         {/* Projects Grid */}
         <section className="mt-10 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-white md:text-2xl">
               All Repositories
             </h2>
-            <span className="text-sm text-slate-400">
-              {mappedProjects.length} repos
-            </span>
           </div>
 
           {mappedProjects.length === 0 ? (
@@ -98,7 +110,7 @@ export default async function ProjectsPage() {
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {mappedProjects.map((project, i) => (
                 <div
-                  key={project.githubUrl || project.title}
+                  key={project.githubUrl || project.title || i}
                   className="animate-[fade-up_0.65s_cubic-bezier(.22,.8,.5,1)_forwards] opacity-0"
                   style={{ animationDelay: `${i * 70}ms` }}
                 >
