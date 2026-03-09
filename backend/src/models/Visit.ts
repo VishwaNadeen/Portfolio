@@ -19,5 +19,4 @@ const VisitSchema = new Schema<IVisit>(
   }
 );
 
-export default mongoose.models.Visit ||
-  mongoose.model<IVisit>("Visit", VisitSchema);
+export default mongoose.models.Visit || mongoose.model<IVisit>("Visit", VisitSchema);

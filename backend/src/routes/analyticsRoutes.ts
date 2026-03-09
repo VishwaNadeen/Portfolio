@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Visit } from "../models/Visit";
+import Visit from "../models/Visit";
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.post("/", async (req, res) => {
     device: device || "unknown",
     country,
     city,
-    sessionId
+    sessionId,
   });
 
   return res.status(201).json({ message: "Tracked" });
