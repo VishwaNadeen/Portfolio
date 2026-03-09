@@ -53,25 +53,7 @@ function GlitchName({ name }: { name: string }) {
 
 /* Main Component */
 export default function HeroSection() {
-  const [hasCv, setHasCv] = useState(false);
-  const [cvLoading, setCvLoading] = useState(true);
   const mouse = useMouse();
-
-  useEffect(() => {
-    let ignore = false;
-    async function loadCv() {
-      try {
-        const cv = await getPublicCv();
-        if (!ignore) setHasCv(!!cv);
-      } catch {
-        if (!ignore) setHasCv(false);
-      } finally {
-        if (!ignore) setCvLoading(false);
-      }
-    }
-    loadCv();
-    return () => { ignore = true; };
-  }, []);
 
   const px = (mouse.x - 0.5) * 40;
   const py = (mouse.y - 0.5) * 40;
@@ -95,7 +77,6 @@ export default function HeroSection() {
       `}</style>
 
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-950/70 to-slate-900/40 p-8 backdrop-blur-xl md:p-12">
-
         {/* scan line */}
         <div className="pointer-events-none absolute inset-0 h-[60px] bg-[linear-gradient(transparent_0%,rgba(103,232,249,0.03)_50%,transparent_100%)] animate-[scan_8s_linear_infinite]" />
 
@@ -118,7 +99,6 @@ export default function HeroSection() {
 
         {/* ── content ── */}
         <div className="relative space-y-6 animate-[rise_0.65s_cubic-bezier(.22,.8,.5,1)_0.1s_both] opacity-0">
-
           {/* heading */}
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-white md:text-5xl">
@@ -136,7 +116,6 @@ export default function HeroSection() {
             into real products while continuously improving my skills through
             practical projects and learning.
           </p>
-
         </div>
       </section>
     </>
