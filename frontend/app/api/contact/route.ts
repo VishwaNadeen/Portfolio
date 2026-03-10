@@ -46,12 +46,6 @@ export async function POST(req: Request) {
     const to = process.env.CONTACT_TO_EMAIL;
 
     if (!from || !to || !process.env.RESEND_API_KEY) {
-      console.error("Contact email config missing", {
-        hasFrom: !!from,
-        hasTo: !!to,
-        hasApiKey: !!process.env.RESEND_API_KEY,
-      });
-
       return NextResponse.json(
         { message: "Failed to send message." },
         { status: 500 }
@@ -76,8 +70,6 @@ export async function POST(req: Request) {
     });
 
     if (result.error) {
-      console.error("Resend error:", result.error);
-
       return NextResponse.json(
         { message: "Failed to send message." },
         { status: 500 }
@@ -88,9 +80,7 @@ export async function POST(req: Request) {
       { message: "Message sent successfully." },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Contact route error:", error);
-
+  } catch {
     return NextResponse.json(
       { message: "Failed to send message." },
       { status: 500 }

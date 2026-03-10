@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 type FormData = {
   name: string;
@@ -14,6 +15,12 @@ type Errors = {
   message?: string;
 };
 
+type ToastState = {
+  show: boolean;
+  type: "success" | "error";
+  message: string;
+};
+
 export default function ContactPage() {
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -23,8 +30,37 @@ export default function ContactPage() {
 
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    type: "success",
+    message: "",
+  });
+
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  function showToast(type: "success" | "error", message: string) {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+
+    setToast({
+      show: true,
+      type,
+      message,
+    });
+
+    toastTimerRef.current = setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 1000);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   function validate(values: FormData) {
     const newErrors: Errors = {};
@@ -52,13 +88,14 @@ export default function ContactPage() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSuccessMsg("");
-    setErrorMsg("");
 
     const validationErrors = validate(form);
     setErrors(validationErrors);
 
-    if (Object.keys(validationErrors).length > 0) return;
+    if (Object.keys(validationErrors).length > 0) {
+      showToast("error", "Please check your form details.");
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -77,15 +114,15 @@ export default function ContactPage() {
         throw new Error(data?.message || "Failed to send message.");
       }
 
-      setSuccessMsg("Your message has been sent successfully.");
       setForm({
         name: "",
         email: "",
         message: "",
       });
       setErrors({});
-    } catch (error: any) {
-      setErrorMsg(error.message || "Something went wrong.");
+      showToast("success", "Message sent successfully.");
+    } catch {
+      showToast("error", "Failed to send message.");
     } finally {
       setSubmitting(false);
     }
@@ -93,7 +130,6 @@ export default function ContactPage() {
 
   return (
     <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
-      {/* background glow */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute h-[320px] w-[320px] rounded-full bg-cyan-500/5 blur-3xl sm:h-[420px] sm:w-[420px] md:h-[520px] md:w-[520px]"
@@ -103,6 +139,39 @@ export default function ContactPage() {
           className="absolute h-[280px] w-[280px] rounded-full bg-blue-500/5 blur-3xl sm:h-[360px] sm:w-[360px] md:h-[460px] md:w-[460px]"
           style={{ top: "64%", left: "0%" }}
         />
+      </div>
+
+      <div
+        className={`pointer-events-none fixed z-[70] transition-all duration-300 ${
+          toast.show
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-2 opacity-0"
+        } left-1/2 top-[4.75rem] w-[min(calc(100vw-1.5rem),22rem)] -translate-x-1/2 px-0 sm:left-auto sm:right-6 sm:top-20 sm:w-full sm:max-w-sm sm:translate-x-0`}
+      >
+        <div
+          className={`pointer-events-auto flex items-start gap-2 rounded-xl border px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3 ${
+            toast.type === "success"
+              ? "border-emerald-400/30 bg-emerald-500/15 text-emerald-200"
+              : "border-red-400/30 bg-red-500/15 text-red-200"
+          }`}
+        >
+          <div className="mt-0.5 shrink-0">
+            {toast.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
+            ) : (
+              <XCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold sm:text-sm">
+              {toast.type === "success" ? "Success" : "Error"}
+            </p>
+            <p className="mt-0.5 break-words text-[11px] leading-4 sm:text-sm sm:leading-6">
+              {toast.message}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:py-10 md:px-6 md:py-16">
@@ -121,9 +190,11 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="relative mt-6 space-y-5 sm:mt-8">
+          <form
+            onSubmit={handleSubmit}
+            className="relative mt-6 space-y-5 sm:mt-8"
+          >
             <div className="grid gap-5 md:grid-cols-2">
-              {/* Name */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-200">
                   Name
@@ -142,7 +213,6 @@ export default function ContactPage() {
                 )}
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-200">
                   Email
@@ -162,7 +232,6 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Message */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-200">
                 Message
@@ -180,18 +249,6 @@ export default function ContactPage() {
                 <p className="text-sm text-red-400">{errors.message}</p>
               )}
             </div>
-
-            {successMsg && (
-              <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
-                {successMsg}
-              </div>
-            )}
-
-            {errorMsg && (
-              <div className="rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-300">
-                {errorMsg}
-              </div>
-            )}
 
             <button
               type="submit"
