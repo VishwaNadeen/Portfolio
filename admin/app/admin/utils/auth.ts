@@ -1,8 +1,9 @@
+import { adminLogout } from "../lib/adminApi";
+
 export function getToken() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("admin_token");
+  return null;
 }
 
-export function logout() {
-  if (typeof window !== "undefined") localStorage.removeItem("admin_token");
+export async function logout() {
+  await adminLogout();
 }

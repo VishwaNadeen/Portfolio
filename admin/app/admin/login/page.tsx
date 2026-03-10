@@ -17,11 +17,14 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const data = await adminLogin(username, password);
-      localStorage.setItem("admin_token", data.token);
+      await adminLogin(username, password);
       router.push("/admin/dashboard");
-    } catch {
-      setErr("Invalid username or password");
+    } catch (error: any) {
+      if (error?.message === "INVALID_CREDENTIALS") {
+        setErr("Invalid username or password");
+      } else {
+        setErr(error?.message || "Login failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -29,26 +32,22 @@ export default function AdminLoginPage() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4">
-      {/* background glow */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-[18%] h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl animate-pulse" />
         <div className="absolute bottom-[12%] left-[18%] h-64 w-64 rounded-full bg-blue-500/10 blur-3xl animate-pulse" />
         <div className="absolute right-[14%] top-[22%] h-56 w-56 rounded-full bg-sky-400/10 blur-3xl animate-pulse" />
       </div>
 
-      {/* decorative grid */}
       <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] [background-size:40px_40px]" />
 
       <div className="relative w-full max-w-md animate-[fadeUp_.7s_ease-out]">
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-[0_0_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
-          {/* top badge */}
           <div className="mb-6 flex justify-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-1.5 text-xs font-medium tracking-wide text-cyan-300">
               Portfolio Admin
             </div>
           </div>
 
-          {/* heading */}
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight text-white">
               Admin Login
@@ -58,7 +57,6 @@ export default function AdminLoginPage() {
             </p>
           </div>
 
-          {/* form */}
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
             <div className="group">
               <label className="mb-2 block text-sm font-medium text-slate-300">

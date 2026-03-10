@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import RequireAuth from "../components/RequireAuth";
 import Link from "next/link";
 import { Activity, Database, Globe, RefreshCcw } from "lucide-react";
+import { adminLogout } from "../lib/adminApi";
 
 type Health = {
   backend: boolean;
@@ -18,10 +20,8 @@ type Stats = {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
-const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
-
 export default function AdminDashboard() {
+  const router = useRouter();
   const [health, setHealth] = useState<Health | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,31 +38,24 @@ export default function AdminDashboard() {
         setLoading(true);
       }
 
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("admin_token")
-          : null;
-
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      };
-
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
       const [healthRes, statsRes] = await Promise.all([
         fetch(`${API_BASE}/api/admin/health`, {
           method: "GET",
-          headers,
+          credentials: "include",
           cache: "no-store",
         }),
         fetch(`${API_BASE}/api/admin/stats`, {
           method: "GET",
-          headers,
+          credentials: "include",
           cache: "no-store",
         }),
       ]);
+
+      if (healthRes.status === 401 || statsRes.status === 401) {
+        await adminLogout();
+        router.replace("/admin/login");
+        return;
+      }
 
       if (!healthRes.ok) {
         throw new Error("Failed to load system health");
@@ -77,7 +70,7 @@ export default function AdminDashboard() {
 
       setHealth(healthData);
       setStats(statsData);
-    } catch (err) {
+    } catch {
       setHealth({
         backend: false,
         database: false,
@@ -91,7 +84,7 @@ export default function AdminDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     loadDashboard();
@@ -100,7 +93,6 @@ export default function AdminDashboard() {
   return (
     <RequireAuth>
       <div className="space-y-6">
-        {/* top bar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold text-white">Dashboard</h1>
 
@@ -117,16 +109,13 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* error */}
         {error && (
           <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
             {error}
           </div>
         )}
 
-        {/* cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* System Health */}
           <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-cyan-500/30">
             <div className="flex items-center gap-2 text-slate-300">
               <Activity size={18} className="text-cyan-300" />
@@ -166,7 +155,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Site Visits */}
           <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-cyan-500/30">
             <div className="flex items-center gap-2 text-slate-300">
               <Database size={18} className="text-cyan-300" />
@@ -182,7 +170,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Last Sync */}
           <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-cyan-500/30">
             <div className="flex items-center gap-2 text-slate-300">
               <RefreshCcw size={18} className="text-cyan-300" />
@@ -203,7 +190,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Portfolio preview */}
         <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 shadow-sm transition duration-300 hover:border-cyan-500/30">
           <div className="flex items-center gap-2 text-slate-300">
             <Globe size={18} className="text-cyan-300" />

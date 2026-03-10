@@ -3,24 +3,19 @@ import jwt from "jsonwebtoken";
 
 type AdminJwtPayload = {
   role: "admin";
+  username?: string;
   iat?: number;
   exp?: number;
 };
 
+const COOKIE_NAME = process.env.COOKIE_NAME || "admin_token";
+
 export function adminAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    const header = req.headers.authorization;
-
-    // check header
-    if (!header || !header.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    // extract token
-    const token = header.split(" ")[1];
+    const token = req.cookies?.[COOKIE_NAME];
 
     if (!token) {
-      return res.status(401).json({ message: "Token missing" });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const secret = process.env.JWT_SECRET;
@@ -31,7 +26,7 @@ export function adminAuth(req: Request, res: Response, next: NextFunction) {
       });
     }
 
-    const decoded = jwt.verify(token, secret) as unknown as AdminJwtPayload;
+    const decoded = jwt.verify(token, secret) as AdminJwtPayload;
 
     if (!decoded || decoded.role !== "admin") {
       return res.status(403).json({ message: "Forbidden" });

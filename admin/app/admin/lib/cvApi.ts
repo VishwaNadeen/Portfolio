@@ -10,11 +10,6 @@ export type CvItem = {
   downloadUrl: string;
 };
 
-function getToken() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem("admin_token") || "";
-}
-
 async function parseJsonSafe(res: Response) {
   const text = await res.text();
 
@@ -26,15 +21,11 @@ async function parseJsonSafe(res: Response) {
 }
 
 export async function getAdminCv(): Promise<CvItem | null> {
-  const token = getToken();
-
   let res: Response;
 
   try {
     res = await fetch(`${API_BASE}/api/cv/admin`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
       cache: "no-store",
     });
   } catch (error: any) {
@@ -57,7 +48,6 @@ export async function getAdminCv(): Promise<CvItem | null> {
 }
 
 export async function uploadCv(file: File) {
-  const token = getToken();
   const formData = new FormData();
   formData.append("cv", file);
 
@@ -66,9 +56,7 @@ export async function uploadCv(file: File) {
   try {
     res = await fetch(`${API_BASE}/api/cv/admin`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
       body: formData,
     });
   } catch (error: any) {
@@ -91,7 +79,6 @@ export async function uploadCv(file: File) {
 }
 
 export async function updateCv(id: string, file: File) {
-  const token = getToken();
   const formData = new FormData();
   formData.append("cv", file);
 
@@ -100,9 +87,7 @@ export async function updateCv(id: string, file: File) {
   try {
     res = await fetch(`${API_BASE}/api/cv/admin/${id}`, {
       method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
       body: formData,
     });
   } catch (error: any) {
@@ -125,16 +110,12 @@ export async function updateCv(id: string, file: File) {
 }
 
 export async function deleteCv(id: string) {
-  const token = getToken();
-
   let res: Response;
 
   try {
     res = await fetch(`${API_BASE}/api/cv/admin/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
     });
   } catch (error: any) {
     throw new Error(error?.message || "Network error while deleting CV");

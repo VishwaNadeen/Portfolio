@@ -1,10 +1,25 @@
 import { Router } from "express";
-import jwt, { Secret } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { adminAuth } from "../middleware/adminAuth";
 import { GitHubProject } from "../models/GitHubProject";
 import { syncGitHubProjectsToDb } from "../jobs/githubSyncJob";
 
 const router = Router();
+
+const COOKIE_NAME = process.env.COOKIE_NAME || "admin_token";
+
+function getCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieDomain = process.env.COOKIE_DOMAIN;
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax" as const,
+    path: "/",
+    ...(isProduction && cookieDomain ? { domain: cookieDomain } : {}),
+  };
+}
 
 /**
  * POST /api/admin/login
@@ -14,40 +29,64 @@ router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body ?? {};
 
-    const adminUser    = process.env.ADMIN_USER;
-    const adminPass    = process.env.ADMIN_PASS;
-    const jwtSecretRaw = process.env.JWT_SECRET;           // keep raw for check
-    const tokenExpire  = process.env.ADMIN_TOKEN_EXPIRES || "2h";
+    const adminUser = process.env.ADMIN_USER;
+    const adminPass = process.env.ADMIN_PASS;
+    const jwtSecret = process.env.JWT_SECRET;
+    const tokenExpire = process.env.ADMIN_TOKEN_EXPIRES || "2h";
 
-    if (!adminUser || !adminPass || !jwtSecretRaw) {
+    if (!adminUser || !adminPass || !jwtSecret) {
       return res.status(500).json({
         message: "Server misconfigured (.env missing admin/JWT settings)",
       });
     }
 
-    // Now TypeScript knows these are strings
-    const jwtSecret: string = jwtSecretRaw;
-
-    // validate login
     if (username !== adminUser || password !== adminPass) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // create JWT token – now type-safe
     const token = jwt.sign(
       { role: "admin", username },
-      jwtSecret,                                 // string → matches Secret
-      { expiresIn: tokenExpire as any }          // ← temporary escape hatch
-      // or better – see alternatives below
+      jwtSecret,
+      {
+        expiresIn: tokenExpire as any,
+      }
     );
 
+    res.cookie(COOKIE_NAME, token, getCookieOptions());
+
     return res.json({
-      token,
-      expiresIn: tokenExpire,
+      success: true,
+      message: "Login successful",
     });
   } catch (err: any) {
     console.error("POST /api/admin/login error:", err?.message || err);
     return res.status(500).json({ message: "Login failed" });
+  }
+});
+
+/**
+ * POST /api/admin/logout
+ */
+router.post("/logout", (_req, res) => {
+  try {
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieDomain = process.env.COOKIE_DOMAIN;
+
+    res.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "lax",
+      path: "/",
+      ...(isProduction && cookieDomain ? { domain: cookieDomain } : {}),
+    });
+
+    return res.json({
+      success: true,
+      message: "Logout successful",
+    });
+  } catch (err: any) {
+    console.error("POST /api/admin/logout error:", err?.message || err);
+    return res.status(500).json({ message: "Logout failed" });
   }
 });
 
@@ -75,13 +114,6 @@ router.get("/projects", adminAuth, async (_req, res) => {
 
 /**
  * PATCH /api/admin/projects/:id
- * allowed fields:
- * featured
- * displayOrder
- * isHidden
- * customTitle
- * customDescription
- * liveUrl
  */
 router.patch("/projects/:id", adminAuth, async (req, res) => {
   try {
@@ -104,7 +136,6 @@ router.patch("/projects/:id", adminAuth, async (req, res) => {
       }
     }
 
-    // minimal validation
     if ("displayOrder" in update) {
       const n = Number(update.displayOrder);
       update.displayOrder = Number.isFinite(n) ? n : 9999;
@@ -131,7 +162,6 @@ router.patch("/projects/:id", adminAuth, async (req, res) => {
 
 /**
  * POST /api/admin/github/sync
- * manual GitHub sync trigger
  */
 router.post("/github/sync", adminAuth, async (_req, res) => {
   try {

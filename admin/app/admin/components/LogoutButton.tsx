@@ -2,21 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { adminLogout } from "../lib/adminApi";
 
 export default function LogoutButton() {
   const router = useRouter();
 
-  function handleLogout() {
+  async function handleLogout() {
     try {
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("token");
-      localStorage.removeItem("auth_token");
-      sessionStorage.removeItem("admin_token");
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("auth_token");
-    } catch {}
-
-    router.replace("/admin/login");
+      await adminLogout();
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      router.replace("/admin/login");
+      router.refresh();
+    }
   }
 
   return (
