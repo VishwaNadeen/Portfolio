@@ -96,33 +96,32 @@ export default function ContactPage() {
       {/* background glow */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className="absolute h-[520px] w-[520px] rounded-full bg-cyan-500/5 blur-3xl"
-          style={{ top: "8%", left: "68%" }}
+          className="absolute h-[320px] w-[320px] rounded-full bg-cyan-500/5 blur-3xl sm:h-[420px] sm:w-[420px] md:h-[520px] md:w-[520px]"
+          style={{ top: "6%", left: "62%" }}
         />
         <div
-          className="absolute h-[460px] w-[460px] rounded-full bg-blue-500/5 blur-3xl"
-          style={{ top: "58%", left: "8%" }}
+          className="absolute h-[280px] w-[280px] rounded-full bg-blue-500/5 blur-3xl sm:h-[360px] sm:w-[360px] md:h-[460px] md:w-[460px]"
+          style={{ top: "64%", left: "0%" }}
         />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-4 py-12 md:px-6 md:py-16">
-        <section className="relative overflow-hidden rounded-3xl bg-white/[0.03] p-6 backdrop-blur-xl md:p-10">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
-          <div className="pointer-events-none absolute -left-24 -bottom-24 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:py-10 md:px-6 md:py-16">
+        <section className="relative overflow-hidden rounded-3xl bg-white/[0.03] p-5 backdrop-blur-xl sm:p-6 md:p-10">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
+          <div className="pointer-events-none absolute -left-24 -bottom-24 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
 
-          <div className="relative space-y-4">
-
-            <h1 className="text-3xl font-bold tracking-tight text-white md:text-5xl">
+          <div className="relative space-y-3 sm:space-y-4">
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-5xl">
               Drop Me a Message
             </h1>
 
-            <p className="max-w-3xl text-sm leading-8 text-slate-300 md:text-base">
+            <p className="max-w-3xl text-sm leading-7 text-slate-300 sm:leading-8 md:text-base">
               Have a question, idea, project, or just want to connect? Fill out
               the form below and send me a message.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="relative mt-8 space-y-5">
+          <form onSubmit={handleSubmit} className="relative mt-6 space-y-5 sm:mt-8">
             <div className="grid gap-5 md:grid-cols-2">
               {/* Name */}
               <div className="space-y-2">
@@ -175,7 +174,7 @@ export default function ContactPage() {
                   setForm((prev) => ({ ...prev, message: e.target.value }))
                 }
                 placeholder="Write your message here..."
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400/50 focus:bg-white/[0.06]"
+                className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400/50 focus:bg-white/[0.06]"
               />
               {errors.message && (
                 <p className="text-sm text-red-400">{errors.message}</p>
@@ -197,7 +196,7 @@ export default function ContactPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-6 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {submitting ? "Sending..." : "Send Message"}
             </button>

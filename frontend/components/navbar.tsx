@@ -5,30 +5,35 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const navItems = [
-  { href: "/",         label: "Home"     },
-  { href: "/about",    label: "About"    },
+  { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
-  { href: "/contact",  label: "Contact"  },
+  { href: "/contact", label: "Contact" },
 ];
 
 const CODE_PAIRS = [
-  ["</>",   "{ }"],
-  ["=>",    "[ ]"],
-  ["fn()",  "&&" ],
-  ["const", "=>" ],
+  ["</>", "{ }"],
+  ["=>", "[ ]"],
+  ["fn()", "&&"],
+  ["const", "=>"],
   ["async", "{ }"],
 ];
 
 function CenterDecoration() {
   const [frame, setFrame] = useState(0);
+
   useEffect(() => {
-    const id = setInterval(() => setFrame((f) => (f + 1) % CODE_PAIRS.length), 4000);
+    const id = setInterval(
+      () => setFrame((f) => (f + 1) % CODE_PAIRS.length),
+      4000
+    );
     return () => clearInterval(id);
   }, []);
+
   const [left, right] = CODE_PAIRS[frame];
 
   return (
-    <div className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 select-none items-center gap-2.5">
+    <div className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 select-none items-center gap-2.5 lg:flex">
       <style>{`
         @keyframes code-fade {
           0%   { opacity:0; transform:translateY(6px);  }
@@ -49,8 +54,8 @@ function CenterDecoration() {
         className="text-[10px] font-medium tracking-[0.05em]"
         style={{
           fontFamily: "'Fira Code','JetBrains Mono',monospace",
-          color:      "rgba(34,211,238,0.55)",
-          animation:  "code-fade 4s ease-in-out both",
+          color: "rgba(34,211,238,0.55)",
+          animation: "code-fade 4s ease-in-out both",
         }}
       >
         {left}
@@ -70,8 +75,8 @@ function CenterDecoration() {
         className="text-[10px] font-medium tracking-[0.05em]"
         style={{
           fontFamily: "'Fira Code','JetBrains Mono',monospace",
-          color:      "rgba(129,140,248,0.55)",
-          animation:  "code-fade 4s ease-in-out both",
+          color: "rgba(129,140,248,0.55)",
+          animation: "code-fade 4s ease-in-out both",
         }}
       >
         {right}
@@ -81,10 +86,10 @@ function CenterDecoration() {
 }
 
 export default function Navbar() {
-  const pathname                    = usePathname();
-  const [scrolled, setScrolled]     = useState(false);
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const [shimPos, setShimPos]       = useState(0);
+  const [shimPos, setShimPos] = useState(0);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -96,12 +101,14 @@ export default function Navbar() {
     let raf: number;
     let start: number | null = null;
     const duration = 4000;
+
     const step = (ts: number) => {
       if (!start) start = ts;
       const p = ((ts - start) % duration) / duration;
       setShimPos(p * 100);
       raf = requestAnimationFrame(step);
     };
+
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, []);
@@ -155,21 +162,19 @@ export default function Navbar() {
             : "bg-gradient-to-r from-[#020817] via-[#0f172a] to-[#020817] shadow-none",
         ].join(" ")}
       >
-        {/* animated bottom border */}
         <div className="border-glow-line absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
 
         <nav className="w-full">
-          <div className="flex h-16 w-full items-center justify-between px-4 md:px-8">
-
-            {/* ── Brand (left) ── */}
-            <Link href="/" className="shrink-0 no-underline">
-              <span className="inline-block text-[1.125rem] font-bold tracking-[0.03em]">
+          <div className="flex min-h-16 w-full flex-col justify-center gap-3 px-4 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0 md:px-8">
+            {/* Brand */}
+            <Link href="/" className="shrink-0 self-center no-underline sm:self-auto">
+              <span className="inline-block text-base font-bold tracking-[0.03em] sm:text-[1.125rem]">
                 {nameChars.map((ch, i) => {
-                  const pos  = (i / (nameChars.length - 1)) * 100;
+                  const pos = (i / (nameChars.length - 1)) * 100;
                   const dist = Math.abs(pos - shimPos);
                   const glow = Math.max(0, 1 - dist / 35);
 
-                  const r = Math.round(203 + (34  - 203) * glow);
+                  const r = Math.round(203 + (34 - 203) * glow);
                   const g = Math.round(213 + (211 - 213) * glow);
                   const b = Math.round(225 + (238 - 225) * glow);
                   const letterColor = `rgb(${r},${g},${b})`;
@@ -180,11 +185,15 @@ export default function Navbar() {
                       className="nav-letter"
                       style={{
                         animationDelay: `${i * 38}ms`,
-                        color:          letterColor,
-                        textShadow:     glow > 0.4
-                          ? `0 0 ${Math.round(glow * 12)}px rgba(34,211,238,${(glow * 0.6).toFixed(2)})`
-                          : "none",
-                        transition: "color 0.05s linear, text-shadow 0.05s linear",
+                        color: letterColor,
+                        textShadow:
+                          glow > 0.4
+                            ? `0 0 ${Math.round(glow * 12)}px rgba(34,211,238,${(
+                                glow * 0.6
+                              ).toFixed(2)})`
+                            : "none",
+                        transition:
+                          "color 0.05s linear, text-shadow 0.05s linear",
                       }}
                     >
                       {ch === " " ? "\u00A0" : ch}
@@ -194,20 +203,24 @@ export default function Navbar() {
               </span>
             </Link>
 
-            {/* ── Center ── */}
+            {/* Center */}
             <CenterDecoration />
 
-            {/* ── Nav Links (right) ── */}
-            <div className="flex shrink-0 items-center gap-1">
+            {/* Nav Links */}
+            <div className="flex w-full flex-wrap items-center justify-center gap-1 sm:w-auto sm:shrink-0 sm:justify-end">
               {navItems.map((item, idx) => {
-                const active = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
+                const active =
+                  item.href === "/"
+                    ? pathname === "/"
+                    : pathname?.startsWith(item.href);
+
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="nav-link nav-item-wrap relative rounded-xl px-4 py-2 text-sm font-medium no-underline transition-colors duration-200"
+                    className="nav-link nav-item-wrap relative rounded-xl px-3 py-2 text-xs font-medium no-underline transition-colors duration-200 sm:px-4 sm:text-sm"
                     style={{
-                      color:          active ? "#fff" : "#cbd5e1",
+                      color: active ? "#fff" : "#cbd5e1",
                       animationDelay: `${500 + idx * 80}ms`,
                     }}
                     onMouseEnter={() => setHoveredIdx(idx)}
@@ -227,13 +240,15 @@ export default function Navbar() {
 
                     <span
                       className="absolute bottom-1 left-1/2 h-[1.5px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-60 transition-[width] duration-[250ms]"
-                      style={{ width: hoveredIdx === idx && !active ? "60%" : "0%" }}
+                      style={{
+                        width:
+                          hoveredIdx === idx && !active ? "60%" : "0%",
+                      }}
                     />
                   </Link>
                 );
               })}
             </div>
-
           </div>
         </nav>
       </header>
