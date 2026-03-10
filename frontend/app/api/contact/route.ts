@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 
     if (!name || name.length < 2) {
       return NextResponse.json(
-        { message: "Valid name is required." },
+        { message: "Please check your form details." },
         { status: 400 }
       );
     }
@@ -30,14 +30,14 @@ export async function POST(req: Request) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
       return NextResponse.json(
-        { message: "Valid email is required." },
+        { message: "Please check your form details." },
         { status: 400 }
       );
     }
 
     if (!message || message.length < 10) {
       return NextResponse.json(
-        { message: "Message must be at least 10 characters." },
+        { message: "Please check your form details." },
         { status: 400 }
       );
     }
@@ -46,8 +46,14 @@ export async function POST(req: Request) {
     const to = process.env.CONTACT_TO_EMAIL;
 
     if (!from || !to || !process.env.RESEND_API_KEY) {
+      console.error("Contact email config missing", {
+        hasFrom: !!from,
+        hasTo: !!to,
+        hasApiKey: !!process.env.RESEND_API_KEY,
+      });
+
       return NextResponse.json(
-        { message: "Email service is not configured properly." },
+        { message: "Failed to send message." },
         { status: 500 }
       );
     }
@@ -70,8 +76,10 @@ export async function POST(req: Request) {
     });
 
     if (result.error) {
+      console.error("Resend error:", result.error);
+
       return NextResponse.json(
-        { message: "Failed to send email." },
+        { message: "Failed to send message." },
         { status: 500 }
       );
     }
@@ -80,9 +88,11 @@ export async function POST(req: Request) {
       { message: "Message sent successfully." },
       { status: 200 }
     );
-  } catch {
+  } catch (error) {
+    console.error("Contact route error:", error);
+
     return NextResponse.json(
-      { message: "Something went wrong while sending your message." },
+      { message: "Failed to send message." },
       { status: 500 }
     );
   }
