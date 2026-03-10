@@ -34,7 +34,7 @@ export default function AdminProjectsPage() {
   const [editing, setEditing] = useState<AdminGitHubProject | null>(null);
   const [saving, setSaving] = useState(false);
 
-  async function load() {
+    async function load() {
     setLoading(true);
     setError(null);
 
@@ -47,6 +47,7 @@ export default function AdminProjectsPage() {
         router.replace("/admin/login");
         return;
       }
+
       setError("Failed to load projects");
     } finally {
       setLoading(false);
@@ -54,14 +55,8 @@ export default function AdminProjectsPage() {
   }
 
   useEffect(() => {
-    const token = localStorage.getItem("admin_token");
-    if (!token) {
-      router.replace("/admin/login");
-      return;
-    }
-
     load();
-  }, [router]);
+  }, []);
 
   const visibleCount = useMemo(
     () => items.filter((p) => !p.isHidden && !p.isPrivate).length,
