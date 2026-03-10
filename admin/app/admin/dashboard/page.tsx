@@ -28,63 +28,66 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDashboard = useCallback(async (isRefresh = false) => {
-    try {
-      setError(null);
+  const loadDashboard = useCallback(
+    async (isRefresh = false) => {
+      try {
+        setError(null);
 
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+
+        const [healthRes, statsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/admin/health`, {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          }),
+          fetch(`${API_BASE}/api/admin/stats`, {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          }),
+        ]);
+
+        if (healthRes.status === 401 || statsRes.status === 401) {
+          await adminLogout();
+          router.replace("/admin/login");
+          return;
+        }
+
+        if (!healthRes.ok) {
+          throw new Error("Failed to load system health");
+        }
+
+        if (!statsRes.ok) {
+          throw new Error("Failed to load dashboard stats");
+        }
+
+        const healthData: Health = await healthRes.json();
+        const statsData: Stats = await statsRes.json();
+
+        setHealth(healthData);
+        setStats(statsData);
+      } catch {
+        setHealth({
+          backend: false,
+          database: false,
+        });
+        setStats({
+          visits: 0,
+          lastSync: null,
+        });
+        setError("Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-
-      const [healthRes, statsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/admin/health`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        }),
-        fetch(`${API_BASE}/api/admin/stats`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        }),
-      ]);
-
-      if (healthRes.status === 401 || statsRes.status === 401) {
-        await adminLogout();
-        router.replace("/admin/login");
-        return;
-      }
-
-      if (!healthRes.ok) {
-        throw new Error("Failed to load system health");
-      }
-
-      if (!statsRes.ok) {
-        throw new Error("Failed to load dashboard stats");
-      }
-
-      const healthData: Health = await healthRes.json();
-      const statsData: Stats = await statsRes.json();
-
-      setHealth(healthData);
-      setStats(statsData);
-    } catch {
-      setHealth({
-        backend: false,
-        database: false,
-      });
-      setStats({
-        visits: 0,
-        lastSync: null,
-      });
-      setError("Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [router]);
+    },
+    [router]
+  );
 
   useEffect(() => {
     loadDashboard();
@@ -92,14 +95,14 @@ export default function AdminDashboard() {
 
   return (
     <RequireAuth>
-      <div className="space-y-6">
+      <div className="space-y-5 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <h1 className="text-xl font-bold text-white sm:text-2xl">Dashboard</h1>
 
           <button
             onClick={() => loadDashboard(true)}
             disabled={refreshing}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-500/30 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-500/30 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             <RefreshCcw
               size={16}
@@ -116,14 +119,14 @@ export default function AdminDashboard() {
         )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-cyan-500/30">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-cyan-500/30 sm:p-5">
             <div className="flex items-center gap-2 text-slate-300">
               <Activity size={18} className="text-cyan-300" />
               <span className="font-medium">System Health</span>
             </div>
 
             <div className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2">
                 <span className="text-slate-300">Backend</span>
                 <span
                   className={
@@ -138,7 +141,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2">
                 <span className="text-slate-300">Database</span>
                 <span
                   className={
@@ -155,13 +158,13 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-cyan-500/30">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-cyan-500/30 sm:p-5">
             <div className="flex items-center gap-2 text-slate-300">
               <Database size={18} className="text-cyan-300" />
               <span className="font-medium">Site Visits</span>
             </div>
 
-            <div className="mt-4 text-3xl font-bold text-white">
+            <div className="mt-4 text-2xl font-bold text-white sm:text-3xl">
               {loading ? "..." : (stats?.visits ?? 0).toLocaleString()}
             </div>
 
@@ -170,13 +173,13 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-cyan-500/30">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-cyan-500/30 sm:p-5">
             <div className="flex items-center gap-2 text-slate-300">
               <RefreshCcw size={18} className="text-cyan-300" />
               <span className="font-medium">Last Sync</span>
             </div>
 
-            <div className="mt-4 min-h-[40px] text-sm text-slate-200">
+            <div className="mt-4 min-h-[40px] text-sm leading-6 text-slate-200">
               {loading
                 ? "Loading..."
                 : stats?.lastSync
@@ -190,13 +193,13 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 shadow-sm transition duration-300 hover:border-cyan-500/30">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5 shadow-sm transition duration-300 hover:border-cyan-500/30 sm:p-6">
           <div className="flex items-center gap-2 text-slate-300">
             <Globe size={18} className="text-cyan-300" />
             <span className="font-medium">Preview</span>
           </div>
 
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm leading-6 text-slate-400">
             Open your public website in a new tab.
           </p>
 
@@ -204,7 +207,7 @@ export default function AdminDashboard() {
             href={"https://vishwanadeen.lk"}
             target="_blank"
             rel="noreferrer"
-            className="mt-4 inline-flex items-center rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90 hover:shadow-[0_8px_25px_rgba(34,211,238,0.18)]"
+            className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90 hover:shadow-[0_8px_25px_rgba(34,211,238,0.18)] sm:w-auto"
           >
             View Website
           </Link>

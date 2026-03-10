@@ -24,7 +24,6 @@ import {
   Clock3,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 
 const ALLOWED_TYPES = [
@@ -155,24 +154,23 @@ export default function AdminCvPage() {
 
   return (
     <RequireAuth>
-      <main className="relative overflow-hidden bg-slate-950 px-4 py-8 text-white">
+      <main className="relative overflow-hidden bg-slate-950 px-4 py-6 text-white sm:py-8">
         {/* background glow */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-20 left-0 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
-          <div className="absolute right-0 top-16 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-sky-500/5 blur-3xl" />
+          <div className="absolute -top-16 left-0 h-52 w-52 rounded-full bg-cyan-500/10 blur-3xl sm:-top-20 sm:h-64 sm:w-64 md:h-72 md:w-72" />
+          <div className="absolute right-0 top-16 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
+          <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-sky-500/5 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
         </div>
 
-        <div className="mx-auto max-w-5xl space-y-6">
+        <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
           {/* top hero */}
-          <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.35)] backdrop-blur-xl md:p-8">
+          <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 p-5 shadow-[0_20px_70px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-6 md:p-8">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_30%)]" />
 
             <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-3">
-
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+                  <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
                     Manage CV
                   </h1>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400 md:text-base">
@@ -182,26 +180,26 @@ export default function AdminCvPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 sm:min-w-[260px]">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.06]">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.06] sm:p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400 sm:text-xs">
                       Status
                     </p>
                     <ShieldCheck className="h-4 w-4 text-cyan-300" />
                   </div>
-                  <p className="mt-3 text-lg font-semibold text-white">
+                  <p className="mt-3 text-base font-semibold text-white sm:text-lg">
                     {cv ? "Uploaded" : "Empty"}
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.06]">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.06] sm:p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400 sm:text-xs">
                       Format
                     </p>
                     <FileText className="h-4 w-4 text-cyan-300" />
                   </div>
-                  <p className="mt-3 text-lg font-semibold text-white">
+                  <p className="mt-3 text-base font-semibold text-white sm:text-lg">
                     PDF / Image
                   </p>
                 </div>
@@ -239,13 +237,13 @@ export default function AdminCvPage() {
 
           <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             {/* upload / replace */}
-            <section className="group rounded-3xl border border-white/10 bg-slate-900/40 p-5 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/15 hover:bg-slate-900/50 md:p-6">
+            <section className="group rounded-3xl border border-white/10 bg-slate-900/40 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/15 hover:bg-slate-900/50 sm:p-5 md:p-6">
               <div className="mb-5 flex items-start gap-4">
                 <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-300">
                   <Upload className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-white">
+                  <h2 className="text-base font-semibold text-white sm:text-lg">
                     {cv ? "Replace Current CV" : "Upload New CV"}
                   </h2>
                 </div>
@@ -306,11 +304,11 @@ export default function AdminCvPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <button
                     type="submit"
                     disabled={saving || loading}
-                    className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                   >
                     <Upload className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                     {saving ? "Saving..." : cv ? "Replace CV" : "Upload CV"}
@@ -321,7 +319,7 @@ export default function AdminCvPage() {
                       type="button"
                       onClick={handleDelete}
                       disabled={saving}
-                      className="group inline-flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-300 transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-300 transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                     >
                       <Trash2 className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                       Delete CV
@@ -332,25 +330,27 @@ export default function AdminCvPage() {
             </section>
 
             {/* current cv */}
-            <section className="group rounded-3xl border border-white/10 bg-slate-900/40 p-5 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/15 hover:bg-slate-900/50 md:p-6">
+            <section className="group rounded-3xl border border-white/10 bg-slate-900/40 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/15 hover:bg-slate-900/50 sm:p-5 md:p-6">
               <div className="mb-5 flex items-start gap-4">
                 <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-300">
                   <FileText className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-white">Current CV</h2>
+                  <h2 className="text-base font-semibold text-white sm:text-lg">
+                    Current CV
+                  </h2>
                 </div>
               </div>
 
               {loading ? (
-                <div className="flex min-h-[260px] items-center justify-center">
+                <div className="flex min-h-[220px] items-center justify-center sm:min-h-[260px]">
                   <div className="flex items-center gap-3 text-sm text-slate-400">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
                     Loading CV...
                   </div>
                 </div>
               ) : !cv ? (
-                <div className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 px-6 text-center">
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 px-6 text-center sm:min-h-[260px]">
                   <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-slate-300">
                     <FileText className="h-6 w-6" />
                   </div>
@@ -365,8 +365,8 @@ export default function AdminCvPage() {
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-3">
                     <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-slate-950/80">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">
                           File Name
                         </p>
                         <FileText className="h-4 w-4 text-cyan-300" />
@@ -377,8 +377,8 @@ export default function AdminCvPage() {
                     </div>
 
                     <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-slate-950/80">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">
                           File Type
                         </p>
                         <ImageIcon className="h-4 w-4 text-cyan-300" />
@@ -389,8 +389,8 @@ export default function AdminCvPage() {
                     </div>
 
                     <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-slate-950/80">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">
                           Last Uploaded
                         </p>
                         <Clock3 className="h-4 w-4 text-cyan-300" />
@@ -401,12 +401,12 @@ export default function AdminCvPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 pt-1">
+                  <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap">
                     <a
                       href={getPublicCvViewUrl()}
                       target="_blank"
                       rel="noreferrer"
-                      className="group inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800"
+                      className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800 sm:w-auto"
                     >
                       <Eye className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                       View CV
@@ -414,7 +414,7 @@ export default function AdminCvPage() {
 
                     <a
                       href={getPublicCvDownloadUrl()}
-                      className="group inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 px-5 py-3 text-sm font-semibold text-cyan-300 transition-all duration-300 hover:-translate-y-0.5 hover:bg-cyan-500/20"
+                      className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 px-5 py-3 text-sm font-semibold text-cyan-300 transition-all duration-300 hover:-translate-y-0.5 hover:bg-cyan-500/20 sm:w-auto"
                     >
                       <Download className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                       Download CV

@@ -34,7 +34,7 @@ export default function AdminProjectsPage() {
   const [editing, setEditing] = useState<AdminGitHubProject | null>(null);
   const [saving, setSaving] = useState(false);
 
-    async function load() {
+  async function load() {
     setLoading(true);
     setError(null);
 
@@ -128,23 +128,22 @@ export default function AdminProjectsPage() {
 
   return (
     <RequireAuth>
-      <div className="relative space-y-6">
+      <div className="relative space-y-5 sm:space-y-6">
         {/* background glow */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-20 left-0 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
-          <div className="absolute right-0 top-20 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-sky-500/5 blur-3xl" />
+          <div className="absolute -top-16 left-0 h-52 w-52 rounded-full bg-cyan-500/10 blur-3xl sm:-top-20 sm:h-64 sm:w-64 md:h-72 md:w-72" />
+          <div className="absolute right-0 top-20 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
+          <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-sky-500/5 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
         </div>
 
         {/* top hero */}
-        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.35)] backdrop-blur-xl md:p-8">
+        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 p-5 shadow-[0_20px_70px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-6 md:p-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_30%)]" />
 
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3">
-
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+                <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
                   Projects
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400 md:text-base">
@@ -154,11 +153,11 @@ export default function AdminProjectsPage() {
               </div>
             </div>
 
-            <div className="flex">
+            <div className="flex w-full lg:w-auto">
               <button
                 onClick={doSync}
                 disabled={syncing}
-                className="group inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-gradient-to-r from-cyan-400/90 to-blue-500/90 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/20 bg-gradient-to-r from-cyan-400/90 to-blue-500/90 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
               >
                 <RefreshCcw
                   className={`h-4 w-4 transition-transform duration-500 ${
@@ -173,13 +172,13 @@ export default function AdminProjectsPage() {
 
         {/* stats cards */}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-400/20 hover:bg-white/[0.06]">
-            <div className="flex items-start justify-between">
+          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-400/20 hover:bg-white/[0.06] sm:p-5">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
                   Total Projects
                 </p>
-                <h3 className="mt-3 text-3xl font-bold text-white">
+                <h3 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
                   {items.length}
                 </h3>
               </div>
@@ -189,13 +188,13 @@ export default function AdminProjectsPage() {
             </div>
           </div>
 
-          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/20 hover:bg-white/[0.06]">
-            <div className="flex items-start justify-between">
+          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/20 hover:bg-white/[0.06] sm:p-5">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
                   Visible Public
                 </p>
-                <h3 className="mt-3 text-3xl font-bold text-white">
+                <h3 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
                   {visibleCount}
                 </h3>
               </div>
@@ -205,13 +204,13 @@ export default function AdminProjectsPage() {
             </div>
           </div>
 
-          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-amber-400/20 hover:bg-white/[0.06]">
-            <div className="flex items-start justify-between">
+          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-amber-400/20 hover:bg-white/[0.06] sm:p-5">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
                   Featured
                 </p>
-                <h3 className="mt-3 text-3xl font-bold text-white">
+                <h3 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
                   {featuredCount}
                 </h3>
               </div>
@@ -221,13 +220,13 @@ export default function AdminProjectsPage() {
             </div>
           </div>
 
-          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-yellow-400/20 hover:bg-white/[0.06]">
-            <div className="flex items-start justify-between">
+          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-yellow-400/20 hover:bg-white/[0.06] sm:p-5">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
                   Hidden
                 </p>
-                <h3 className="mt-3 text-3xl font-bold text-white">
+                <h3 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
                   {hiddenCount}
                 </h3>
               </div>
@@ -246,10 +245,10 @@ export default function AdminProjectsPage() {
 
         {/* project table */}
         <section className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/50 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl">
-          <div className="border-b border-white/10 px-5 py-4">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="border-b border-white/10 px-4 py-4 sm:px-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-base font-semibold text-white sm:text-lg">
                   Project Records
                 </h2>
                 <p className="text-sm text-slate-400">
@@ -257,7 +256,7 @@ export default function AdminProjectsPage() {
                 </p>
               </div>
 
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-300">
+              <div className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-300 sm:w-auto">
                 <ArrowUpDown className="h-3.5 w-3.5" />
                 Ordered by display priority
               </div>
@@ -265,7 +264,7 @@ export default function AdminProjectsPage() {
           </div>
 
           {loading ? (
-            <div className="flex min-h-[260px] items-center justify-center">
+            <div className="flex min-h-[260px] items-center justify-center px-4 text-center">
               <div className="flex items-center gap-3 text-slate-300">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
                 Loading projects...
@@ -286,7 +285,7 @@ export default function AdminProjectsPage() {
                 </thead>
 
                 <tbody className="text-slate-200">
-                  {items.map((p, index) => (
+                  {items.map((p) => (
                     <tr
                       key={p._id}
                       className="group border-b border-white/5 transition-colors duration-300 hover:bg-white/[0.03]"
@@ -407,19 +406,19 @@ export default function AdminProjectsPage() {
 
         {/* edit modal */}
         {editing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 backdrop-blur-sm animate-in fade-in duration-200 sm:py-6">
             <form
               onSubmit={saveEdit}
               className="w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-[0_25px_80px_rgba(0,0,0,0.55)] animate-in zoom-in-95 duration-200"
             >
-              <div className="border-b border-white/10 bg-white/[0.02] px-6 py-5">
+              <div className="border-b border-white/10 bg-white/[0.02] px-4 py-4 sm:px-6 sm:py-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-cyan-200">
                       <Sparkles className="h-3.5 w-3.5" />
                       Edit Project
                     </div>
-                    <h2 className="mt-3 text-xl font-semibold text-white">
+                    <h2 className="mt-3 text-lg font-semibold text-white sm:text-xl">
                       {editing.customTitle || editing.name}
                     </h2>
                     <p className="mt-1 text-sm text-slate-400">{editing.fullName}</p>
@@ -435,7 +434,7 @@ export default function AdminProjectsPage() {
                 </div>
               </div>
 
-              <div className="grid gap-4 px-6 py-5 md:grid-cols-2">
+              <div className="grid gap-4 px-4 py-4 sm:px-6 sm:py-5 md:grid-cols-2">
                 <label className="block text-xs text-slate-400">
                   Project Type
                   <input
@@ -520,8 +519,8 @@ export default function AdminProjectsPage() {
                   />
                 </label>
 
-                <div className="flex items-end">
-                  <div className="grid w-full grid-cols-2 gap-3">
+                <div className="flex items-end md:col-span-1">
+                  <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
                     <button
                       type="button"
                       onClick={() =>
@@ -557,7 +556,7 @@ export default function AdminProjectsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 border-t border-white/10 bg-white/[0.02] px-6 py-5 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-3 border-t border-white/10 bg-white/[0.02] px-4 py-4 sm:flex-row sm:justify-end sm:px-6 sm:py-5">
                 <button
                   type="button"
                   onClick={() => setEditing(null)}
