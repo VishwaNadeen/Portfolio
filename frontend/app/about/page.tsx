@@ -12,7 +12,7 @@ export default function AboutPage() {
     <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
       <PageTransition>
         <main>
-          <div className="relative z-10 mx-auto max-w-5xl space-y-12 px-4 py-12">
+          <div className="relative z-10 mx-auto max-w-5xl space-y-10 px-4 py-8 sm:space-y-12 sm:py-10 md:py-12">
             <AboutHero />
             <AboutEducation />
             <AboutJourney />
@@ -21,8 +21,6 @@ export default function AboutPage() {
           </div>
         </main>
       </PageTransition>
-
-      
 
       <FloatingCvButton />
       <ScrollToTop />

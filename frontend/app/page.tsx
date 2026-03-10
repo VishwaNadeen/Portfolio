@@ -75,11 +75,11 @@ export default async function HomePage() {
         {CODE_SYMBOLS.map((s, i) => (
           <span
             key={i}
-            className="absolute select-none font-medium text-cyan-200/[0.18] will-change-transform [font-family:'Fira_Code','Cascadia_Code','JetBrains_Mono',monospace] animate-[float-code_linear_infinite]"
+            className="absolute select-none font-medium text-cyan-200/[0.12] will-change-transform [font-family:'Fira_Code','Cascadia_Code','JetBrains_Mono',monospace] animate-[float-code_linear_infinite] sm:text-cyan-200/[0.18]"
             style={{
               left: `${s.x}%`,
               bottom: `-${s.size + 2}%`,
-              fontSize: `${s.size}px`,
+              fontSize: `${Math.max(s.size - 2, 8)}px`,
               animationDuration: `${s.dur}s`,
               animationDelay: `${s.delay}s`,
             }}
@@ -90,22 +90,22 @@ export default async function HomePage() {
 
         {/* radial glow layers */}
         <div
-          className="absolute -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.05)_0%,transparent_70%)]"
+          className="absolute h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.05)_0%,transparent_70%)] sm:h-[440px] sm:w-[440px] md:h-[600px] md:w-[600px]"
           style={{ top: "10%", left: "60%" }}
         />
         <div
-          className="absolute -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.04)_0%,transparent_70%)]"
+          className="absolute h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.04)_0%,transparent_70%)] sm:h-[360px] sm:w-[360px] md:h-[500px] md:w-[500px]"
           style={{ top: "70%", left: "20%" }}
         />
         <div
-          className="absolute -translate-x-1/2 -translate-y-1/2 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(14,165,233,0.035)_0%,transparent_72%)]"
+          className="absolute h-[220px] w-[220px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(14,165,233,0.035)_0%,transparent_72%)] sm:h-[320px] sm:w-[320px] md:h-[420px] md:w-[420px]"
           style={{ top: "35%", left: "85%" }}
         />
       </div>
 
       {/* ── page content ── */}
-      <div className="relative z-10 mx-auto max-w-5xl space-y-14 px-4 py-12">
-        <div className="space-y-25">
+      <div className="relative z-10 mx-auto max-w-5xl space-y-10 px-4 py-8 sm:space-y-12 sm:py-10 md:space-y-14 md:py-12">
+        <div className="space-y-12 sm:space-y-16 md:space-y-20 lg:space-y-25">
           <HeroSection />
           <Social3DIcons />
         </div>
@@ -123,10 +123,12 @@ export default async function HomePage() {
         </section> */}
 
         {/* FEATURED PROJECTS */}
-        <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-white">Featured Projects</h2>
+        <section className="space-y-5 sm:space-y-6">
+          <h2 className="text-lg font-semibold text-white sm:text-xl">
+            Featured Projects
+          </h2>
 
-          <div className="grid items-stretch gap-6 md:grid-cols-3">
+          <div className="grid items-stretch gap-5 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
             {featured.map((p: any, i: number) => {
               const techArr =
                 Array.isArray(p.topics) && p.topics.length
@@ -172,6 +174,11 @@ export default async function HomePage() {
         @keyframes fade-up {
           from { opacity: 0; transform: translateY(24px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (min-width: 640px) {
+          .animate-\\[float-code_linear_infinite\\] {
+            font-size: inherit !important;
+          }
         }
       `}</style>
     </main>

@@ -9,34 +9,37 @@ export default function ProjectCard({ project }: { project: Project }) {
       href={project.link || project.githubUrl || "#"}
       target="_blank"
       rel="noreferrer"
-      className="group relative block h-full overflow-hidden rounded-2xl bg-white/[0.04] p-5 backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-2 hover:bg-white/[0.07] hover:shadow-[0_20px_50px_rgba(0,0,0,0.4),0_0_0_1px_rgba(34,211,238,0.08)]"
+      className="group relative block h-full overflow-hidden rounded-2xl bg-white/[0.04] p-4 backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-2 hover:bg-white/[0.07] hover:shadow-[0_20px_50px_rgba(0,0,0,0.4),0_0_0_1px_rgba(34,211,238,0.08)] sm:p-5"
     >
       {/* soft inner glow on hover */}
-      <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-        style={{ background: "radial-gradient(ellipse at 70% 0%, rgba(34,211,238,0.07) 0%, transparent 65%)" }}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        style={{
+          background:
+            "radial-gradient(ellipse at 70% 0%, rgba(34,211,238,0.07) 0%, transparent 65%)",
+        }}
       />
 
       {/* top-right orb */}
-      <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-cyan-400/8 blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-cyan-400/8 blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100 sm:h-32 sm:w-32" />
 
       {/* bottom-left orb */}
-      <div className="pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-blue-500/8 blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute -bottom-12 -left-12 h-28 w-28 rounded-full bg-blue-500/8 blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100 sm:h-32 sm:w-32" />
 
       <div className="relative flex h-full flex-col">
-
         {/* Top */}
-        <div className="flex items-start justify-between gap-3 min-h-[56px]">
-          <h3 className="line-clamp-2 text-lg font-semibold text-white transition-colors duration-300 group-hover:text-cyan-200">
+        <div className="flex min-h-[52px] items-start justify-between gap-3 sm:min-h-[56px]">
+          <h3 className="line-clamp-2 text-base font-semibold text-white transition-colors duration-300 group-hover:text-cyan-200 sm:text-lg">
             {project.title}
           </h3>
 
-          <span className="shrink-0 rounded-full bg-white/[0.05] p-2 text-white/50 transition-all duration-300 group-hover:bg-cyan-400/10 group-hover:text-cyan-300">
+          <span className="shrink-0 rounded-full bg-white/[0.05] p-1.5 text-white/50 transition-all duration-300 group-hover:bg-cyan-400/10 group-hover:text-cyan-300 sm:p-2">
             <ExternalLink className="h-4 w-4" />
           </span>
         </div>
 
         {/* Type + Platform */}
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
           {project.type ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-cyan-400/10 px-3 py-1 text-[11px] font-medium text-cyan-300">
               <Layers3 className="h-3.5 w-3.5" />
@@ -53,7 +56,7 @@ export default function ProjectCard({ project }: { project: Project }) {
         </div>
 
         {/* Repo stats */}
-        <div className="mt-4 flex items-center gap-4 text-sm text-white/50">
+        <div className="mt-3 flex items-center gap-4 text-sm text-white/50 sm:mt-4">
           <div className="flex items-center gap-1.5 transition-colors duration-300 group-hover:text-yellow-300">
             <Star className="h-4 w-4" />
             <span>{project.stars ?? 0}</span>
@@ -68,7 +71,7 @@ export default function ProjectCard({ project }: { project: Project }) {
         <div className="flex-1" />
 
         {/* Tech stack */}
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
           {tech.map((t, index) => (
             <span
               key={t}
@@ -85,7 +88,6 @@ export default function ProjectCard({ project }: { project: Project }) {
             </span>
           ) : null}
         </div>
-
       </div>
     </a>
   );

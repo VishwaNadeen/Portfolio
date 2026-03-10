@@ -44,9 +44,9 @@ const loopItems = [...techItems, ...techItems];
 
 export default function TechStackStrip() {
   return (
-    <section className="relative overflow-x-hidden overflow-y-visible py-6 bg-transparent">
+    <section className="relative overflow-x-hidden overflow-y-visible bg-transparent py-4 sm:py-5 md:py-6">
       <div
-        className="group overflow-x-hidden overflow-y-visible py-6 pb-16"
+        className="group overflow-x-hidden overflow-y-visible py-4 pb-12 sm:py-5 sm:pb-14 md:py-6 md:pb-16"
         style={{
           WebkitMaskImage:
             "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
@@ -56,9 +56,10 @@ export default function TechStackStrip() {
       >
         <div
           className="
-            flex w-max items-center gap-6
-            animate-[tech-marquee_36s_linear_infinite]
+            flex w-max items-center gap-4 sm:gap-5 md:gap-6
+            animate-[tech-marquee_30s_linear_infinite]
             group-hover:[animation-play-state:paused]
+            md:animate-[tech-marquee_36s_linear_infinite]
           "
         >
           {loopItems.map((item, i) => {
@@ -67,18 +68,19 @@ export default function TechStackStrip() {
             return (
               <div
                 key={`${item.name}-${i}`}
-                className="relative group/icon shrink-0"
+                className="group/icon relative shrink-0"
               >
                 {/* tooltip */}
                 <div
                   className="
-                    pointer-events-none absolute left-1/2 top-full z-20 mt-3
+                    pointer-events-none absolute left-1/2 top-full z-20 mt-2.5
                     -translate-x-1/2 translate-y-1
                     whitespace-nowrap rounded-full border border-white/10
-                    bg-slate-900/95 px-3 py-1.5 text-xs font-medium text-white/90
+                    bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white/90
                     opacity-0 shadow-[0_10px_30px_rgba(0,0,0,0.35)]
                     backdrop-blur-md transition-all duration-300
                     group-hover/icon:translate-y-0 group-hover/icon:opacity-100
+                    sm:mt-3 sm:px-3 sm:py-1.5 sm:text-xs
                   "
                 >
                   {item.name}
@@ -87,20 +89,21 @@ export default function TechStackStrip() {
                 {/* icon card */}
                 <div
                   className="
-                    relative flex h-16 w-16 items-center justify-center
+                    relative flex h-14 w-14 items-center justify-center
                     rounded-2xl border border-white/10
                     bg-white/[0.05] backdrop-blur-md
                     shadow-[0_12px_30px_rgba(0,0,0,0.35)]
                     transition-all duration-300 ease-out
-                    group-hover/icon:-translate-y-3
+                    group-hover/icon:-translate-y-2 sm:group-hover/icon:-translate-y-3
                     group-hover/icon:scale-110
                     group-hover/icon:border-cyan-400/30
                     group-hover/icon:shadow-[0_18px_40px_rgba(34,211,238,0.18)]
+                    sm:h-[60px] sm:w-[60px] md:h-16 md:w-16
                   "
                 >
                   <Icon
-                    size={32}
-                    className={`${item.color} transition-transform duration-300 group-hover/icon:scale-110`}
+                    size={26}
+                    className={`${item.color} transition-transform duration-300 group-hover/icon:scale-110 sm:[&]:size-7 md:[&]:size-8`}
                   />
                 </div>
               </div>

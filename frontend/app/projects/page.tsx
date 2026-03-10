@@ -80,34 +80,34 @@ export default async function ProjectsPage() {
       {/* background glows */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className="absolute h-[520px] w-[520px] rounded-full bg-cyan-500/5 blur-3xl"
+          className="absolute h-[300px] w-[300px] rounded-full bg-cyan-500/5 blur-3xl sm:h-[420px] sm:w-[420px] md:h-[520px] md:w-[520px]"
           style={{ top: "6%", left: "68%" }}
         />
         <div
-          className="absolute h-[460px] w-[460px] rounded-full bg-blue-500/5 blur-3xl"
+          className="absolute h-[260px] w-[260px] rounded-full bg-blue-500/5 blur-3xl sm:h-[360px] sm:w-[360px] md:h-[460px] md:w-[460px]"
           style={{ top: "52%", left: "8%" }}
         />
         <div
-          className="absolute h-[380px] w-[380px] rounded-full bg-sky-400/5 blur-3xl"
+          className="absolute h-[220px] w-[220px] rounded-full bg-sky-400/5 blur-3xl sm:h-[300px] sm:w-[300px] md:h-[380px] md:w-[380px]"
           style={{ top: "30%", left: "82%" }}
         />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:py-10 md:px-6 md:py-16">
         {/* Projects Grid */}
-        <section className="mt-10 space-y-6">
+        <section className="mt-6 space-y-5 sm:mt-8 sm:space-y-6 md:mt-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white md:text-2xl">
+            <h2 className="text-lg font-semibold text-white sm:text-xl md:text-2xl">
               All Repositories
             </h2>
           </div>
 
           {mappedProjects.length === 0 ? (
-            <div className="rounded-2xl bg-white/[0.03] p-6 text-slate-300">
+            <div className="rounded-2xl bg-white/[0.03] p-5 text-sm text-slate-300 sm:p-6 sm:text-base">
               No public repositories found.
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3">
               {mappedProjects.map((project, i) => (
                 <div
                   key={project.githubUrl || project.title || i}

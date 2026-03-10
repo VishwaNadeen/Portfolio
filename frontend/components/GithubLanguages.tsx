@@ -75,15 +75,17 @@ export default function GithubLanguages() {
       }
     })();
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const items = useMemo(() => (data ? data.items : []), [data]);
 
   if (err) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-white/[0.05] p-6 shadow-[0_12px_30px_rgba(0,0,0,0.35)] backdrop-blur-md">
-        <h3 className="text-lg font-semibold text-white">GitHub Languages</h3>
+      <section className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.35)] backdrop-blur-md sm:p-6">
+        <h3 className="text-base font-semibold text-white sm:text-lg">GitHub Languages</h3>
         <p className="mt-3 text-sm text-red-300">Error: {err}</p>
       </section>
     );
@@ -91,8 +93,8 @@ export default function GithubLanguages() {
 
   if (!data) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-white/[0.05] p-6 shadow-[0_12px_30px_rgba(0,0,0,0.35)] backdrop-blur-md">
-        <h3 className="text-lg font-semibold text-white">GitHub Languages</h3>
+      <section className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.35)] backdrop-blur-md sm:p-6">
+        <h3 className="text-base font-semibold text-white sm:text-lg">GitHub Languages</h3>
         <p className="mt-3 text-sm text-slate-300">Loading...</p>
       </section>
     );
@@ -111,10 +113,10 @@ export default function GithubLanguages() {
         }
       `}</style>
 
-      <section className="rounded-2xl bg-white/[0.05] p-6 shadow-[0_12px_30px_rgba(0,0,0,0.35)] backdrop-blur-md">
-        <h3 className="text-lg font-semibold text-white">GitHub Usage</h3>
+      <section className="rounded-2xl bg-white/[0.05] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.35)] backdrop-blur-md sm:p-6">
+        <h3 className="text-base font-semibold text-white sm:text-lg">GitHub Usage</h3>
 
-        <div className="mt-6 space-y-5">
+        <div className="mt-5 space-y-4 sm:mt-6 sm:space-y-5">
           {items.map((it, idx) => {
             const color = LANG_COLORS[it.lang] || "rgba(255,255,255,0.65)";
             const width = w[it.lang] ?? 0;
@@ -129,11 +131,11 @@ export default function GithubLanguages() {
                 onMouseLeave={() => setHovered(null)}
               >
                 {/* label row */}
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex min-w-0 items-center gap-3">
+                <div className="flex items-center justify-between gap-3 text-xs sm:text-sm">
+                  <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                     {/* dot */}
                     <span
-                      className="size-2.5 shrink-0 rounded-full transition-transform duration-200 ease-[cubic-bezier(.22,.8,.5,1)] group-hover:scale-[1.4]"
+                      className="size-2 shrink-0 rounded-full transition-transform duration-200 ease-[cubic-bezier(.22,.8,.5,1)] group-hover:scale-[1.4] sm:size-2.5"
                       style={{
                         backgroundColor: color,
                         boxShadow: isHov
@@ -147,7 +149,7 @@ export default function GithubLanguages() {
 
                   {/* percentage */}
                   <span
-                    className="ml-4 shrink-0 font-semibold tabular-nums transition-colors duration-200 animate-[pct-pop_0.4s_cubic-bezier(.22,.8,.5,1)_both]"
+                    className="ml-3 shrink-0 font-semibold tabular-nums text-xs transition-colors duration-200 animate-[pct-pop_0.4s_cubic-bezier(.22,.8,.5,1)_both] sm:ml-4 sm:text-sm"
                     style={{ color: isHov ? color : "#cbd5e1" }}
                   >
                     {it.pct.toFixed(1)}%
@@ -155,7 +157,7 @@ export default function GithubLanguages() {
                 </div>
 
                 {/* bar track */}
-                <div className="relative h-[7px] w-full overflow-hidden rounded-full bg-white/[0.07]">
+                <div className="relative h-[6px] w-full overflow-hidden rounded-full bg-white/[0.07] sm:h-[7px]">
                   <div
                     className="relative h-full rounded-full transition-[width] duration-[800ms] ease-[cubic-bezier(.22,.8,.5,1)] group-hover:brightness-125
                       after:absolute after:inset-0 after:rounded-full
@@ -164,7 +166,7 @@ export default function GithubLanguages() {
                       after:[animation:bar-shimmer_1.4s_linear_infinite]
                       group-hover:after:opacity-100"
                     style={{
-                      width:      `${Math.max(0, Math.min(100, width))}%`,
+                      width: `${Math.max(0, Math.min(100, width))}%`,
                       background: isHov
                         ? `linear-gradient(90deg, ${color}cc, ${color})`
                         : color,
