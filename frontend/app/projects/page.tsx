@@ -1,4 +1,6 @@
 import ProjectCard from "../../components/projectCard";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
+import BackgroundAnimation from "@/components/animation/BackgroundAnimation";
 
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
@@ -118,6 +120,7 @@ export default async function ProjectsPage() {
 
   return (
     <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
+      <BackgroundAnimation />
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute h-[300px] w-[300px] rounded-full bg-cyan-500/5 blur-3xl sm:h-[420px] sm:w-[420px] md:h-[520px] md:w-[520px]"
@@ -160,6 +163,8 @@ export default async function ProjectsPage() {
           )}
         </section>
       </div>
+
+      <ScrollToTopButton />
 
       <style>{`
         @keyframes fade-up {

@@ -1,8 +1,13 @@
 const skillGroups = [
   {
+    title: "Languages",
+    accent: "violet",
+    skills: ["JavaScript", "TypeScript", "Java", "Kotlin", "Python", "C", "C++", "PHP"],
+  },
+  {
     title: "Frontend",
     accent: "cyan",
-    skills: ["React", "Next.js", "JavaScript", "TypeScript", "Tailwind CSS", "HTML", "CSS"],
+    skills: ["React", "Next.js", "HTML", "CSS", "Tailwind CSS"],
   },
   {
     title: "Backend",
@@ -12,7 +17,7 @@ const skillGroups = [
   {
     title: "Mobile Development",
     accent: "emerald",
-    skills: ["Android Studio", "Java", "Android SDK"],
+    skills: ["Flutter", "React Native", "Android Studio", "Android SDK"],
   },
   {
     title: "Database",
@@ -20,9 +25,19 @@ const skillGroups = [
     skills: ["MongoDB", "MySQL"],
   },
   {
+    title: "AI Tools",
+    accent: "rose",
+    skills: ["ChatGPT", "Gemini", "Grok", "Claude", "GitHub Copilot", "Windsurf", "Devin AI"],
+  },
+  {
+    title: "DevOps & Hosting",
+    accent: "amber",
+    skills: ["Git", "GitHub", "Vercel", "Render", "Cloudflare"],
+  },
+  {
     title: "Tools",
     accent: "sky",
-    skills: ["Git", "GitHub", "VS Code", "Android Studio", "Postman"],
+    skills: ["VS Code", "Postman", "Android Studio", "Figma", "XAMPP", "Eclipse", "IntelliJ IDEA", "MySQL Workbench"],
   },
 ];
 
@@ -32,40 +47,48 @@ function getAccentClasses(accent: string) {
       return {
         dot: "bg-cyan-400",
         title: "text-cyan-300",
-        border: "border-cyan-400/20",
-        bg: "bg-cyan-400/5",
         tag: "border-cyan-400/20 bg-cyan-400/10 text-cyan-300",
       };
     case "blue":
       return {
         dot: "bg-blue-400",
         title: "text-blue-300",
-        border: "border-blue-400/20",
-        bg: "bg-blue-400/5",
         tag: "border-blue-400/20 bg-blue-400/10 text-blue-300",
       };
     case "emerald":
       return {
         dot: "bg-emerald-400",
         title: "text-emerald-300",
-        border: "border-emerald-400/20",
-        bg: "bg-emerald-400/5",
         tag: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
       };
     case "indigo":
       return {
         dot: "bg-indigo-400",
         title: "text-indigo-300",
-        border: "border-indigo-400/20",
-        bg: "bg-indigo-400/5",
         tag: "border-indigo-400/20 bg-indigo-400/10 text-indigo-300",
+      };
+    case "violet":
+      return {
+        dot: "bg-violet-400",
+        title: "text-violet-300",
+        tag: "border-violet-400/20 bg-violet-400/10 text-violet-300",
+      };
+    case "rose":
+      return {
+        dot: "bg-rose-400",
+        title: "text-rose-300",
+        tag: "border-rose-400/20 bg-rose-400/10 text-rose-300",
+      };
+    case "amber":
+      return {
+        dot: "bg-amber-400",
+        title: "text-amber-300",
+        tag: "border-amber-400/20 bg-amber-400/10 text-amber-300",
       };
     default:
       return {
         dot: "bg-sky-400",
         title: "text-sky-300",
-        border: "border-sky-400/20",
-        bg: "bg-sky-400/5",
         tag: "border-sky-400/20 bg-sky-400/10 text-sky-300",
       };
   }
@@ -73,17 +96,18 @@ function getAccentClasses(accent: string) {
 
 export default function AboutSkills() {
   return (
-    <section className="relative overflow-hidden rounded-[32px] py-5 sm:py-6 md:py-8">
+    <section className="relative overflow-hidden rounded-[32px] p-5 sm:p-6 md:p-8">
       {/* glow effects */}
       <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-cyan-500/10 blur-3xl sm:-right-20 sm:-top-20 sm:h-48 sm:w-48" />
       <div className="pointer-events-none absolute -left-16 -bottom-16 h-36 w-36 rounded-full bg-blue-500/10 blur-3xl sm:-left-20 sm:-bottom-20 sm:h-48 sm:w-48" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/5 blur-3xl sm:h-48 sm:w-48" />
 
       <div className="relative space-y-6 sm:space-y-8">
         <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
           Tech Stack
         </h2>
 
-        <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
           {skillGroups.map((group) => {
             const styles = getAccentClasses(group.accent);
 

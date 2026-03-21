@@ -116,12 +116,11 @@ export default function HeroSection() {
 
           {/* description */}
           <p className="text-sm leading-7 text-justify text-slate-300 sm:text-base sm:leading-8 md:text-lg">
-            I'm a full-stack developer from Sri Lanka who enjoys building modern,
-            scalable web applications and exploring new technologies. I work mainly
-            with JavaScript, React, Next.js, and Node.js to create clean,
-            efficient, and user-friendly digital experiences. I enjoy turning ideas
-            into real products while continuously improving my skills through
-            practical projects and learning.
+            Hi, I'm a Software Engineer from Sri Lanka with a love for building things people enjoy using. 
+            From cross-platform mobile apps to full web experiences, I focus on quality at every layer - 
+            thoughtful design, and interactions that just feel right. I enjoy turning ideas into real, 
+            working products that make a meaningful difference in people's daily lives, one great experience 
+            at a time.
           </p>
         </div>
       </section>
