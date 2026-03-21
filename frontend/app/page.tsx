@@ -137,10 +137,14 @@ export default async function HomePage() {
 
               const mapped = {
                 title: p.customTitle || p.name,
-                description: p.customDescription || p.description || "",
+                description:
+                  p.customDescription ||
+                  p.description ||
+                  "No description available for this project.",
                 tech: techArr,
                 link: p.liveUrl || p.htmlUrl || "",
                 githubUrl: p.htmlUrl || "",
+                imageUrl: p.imageUrl || "",
                 type: p.type || "",
                 platform: p.platform || "",
                 stars: p.stars ?? 0,

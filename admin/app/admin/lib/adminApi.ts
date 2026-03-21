@@ -30,6 +30,10 @@ export type AdminGitHubProject = {
 
   createdAt: string;
   updatedAt: string;
+
+  imageUrl?: string;
+  imagePublicId?: string;
+  hasCustomImage?: boolean;
 };
 
 async function parseJsonSafe(res: Response) {
@@ -132,4 +136,32 @@ export async function adminSyncGitHub() {
   if (!res.ok) throw new Error("Sync failed");
 
   return res.json();
+}
+
+export async function adminUploadProjectImage(id: string, file: File) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch(`${API_BASE}/api/admin/projects/${id}/image`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error("Image upload failed");
+
+  return res.json() as Promise<AdminGitHubProject>;
+}
+
+export async function adminRemoveProjectImage(id: string) {
+  const res = await fetch(`${API_BASE}/api/admin/projects/${id}/image`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error("Image remove failed");
+
+  return res.json() as Promise<AdminGitHubProject>;
 }

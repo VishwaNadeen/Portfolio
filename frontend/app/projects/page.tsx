@@ -1,25 +1,41 @@
 import ProjectCard from "../../components/projectCard";
 
+export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
 type DbProject = {
   _id?: string;
   repoId?: number;
   name?: string;
-  title?: string;
+  fullName?: string;
+
   description?: string | null;
+  customDescription?: string | null;
+
   htmlUrl?: string;
   homepage?: string | null;
+  liveUrl?: string | null;
+
   language?: string | null;
   topics?: string[];
+
   stars?: number;
   forks?: number;
+
   isHidden?: boolean;
   isPrivate?: boolean;
   featured?: boolean;
   displayOrder?: number;
+
   pushedAt?: string;
   updatedAtGithub?: string;
+
+  customTitle?: string | null;
+  type?: string | null;
+  platform?: string | null;
+
+  imageUrl?: string | null;
+  imagePublicId?: string | null;
 };
 
 async function getDatabaseProjects(): Promise<DbProject[]> {
@@ -33,6 +49,7 @@ async function getDatabaseProjects(): Promise<DbProject[]> {
   try {
     const res = await fetch(`${apiBase}/api/github/projects`, {
       cache: "no-store",
+      next: { revalidate: 0 },
       headers: {
         Accept: "application/json",
       },
@@ -60,24 +77,47 @@ export default async function ProjectsPage() {
   const projects = await getDatabaseProjects();
 
   const mappedProjects = projects.map((project) => ({
-    title: project.title || project.name || "Untitled Project",
+    title:
+      (typeof project.customTitle === "string" && project.customTitle.trim()) ||
+      project.name ||
+      "Untitled Project",
+
     description:
-      project.description || "No description available for this project.",
+      (typeof project.customDescription === "string" &&
+        project.customDescription.trim()) ||
+      project.description ||
+      "No description available for this project.",
+
     tech:
       Array.isArray(project.topics) && project.topics.length
         ? project.topics
         : [project.language].filter(Boolean),
-    link: project.homepage || project.htmlUrl || "#",
+
+    link:
+      (typeof project.liveUrl === "string" && project.liveUrl.trim()) ||
+      project.homepage ||
+      project.htmlUrl ||
+      "#",
+
     githubUrl: project.htmlUrl || "",
-    type: "GitHub Repository",
-    platform: "GitHub",
+
+    type:
+      (typeof project.type === "string" && project.type.trim()) ||
+      "GitHub Repository",
+
+    platform:
+      (typeof project.platform === "string" && project.platform.trim()) ||
+      "GitHub",
+
     stars: project.stars ?? 0,
     forks: project.forks ?? 0,
+
+    imageUrl:
+      (typeof project.imageUrl === "string" && project.imageUrl.trim()) || "",
   }));
 
   return (
     <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
-      {/* background glows */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute h-[300px] w-[300px] rounded-full bg-cyan-500/5 blur-3xl sm:h-[420px] sm:w-[420px] md:h-[520px] md:w-[520px]"
@@ -94,11 +134,10 @@ export default async function ProjectsPage() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:py-10 md:px-6 md:py-16">
-        {/* Projects Grid */}
         <section className="mt-6 space-y-5 sm:mt-8 sm:space-y-6 md:mt-10">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white sm:text-xl md:text-2xl">
-              All Repositories
+              All Projects
             </h2>
           </div>
 

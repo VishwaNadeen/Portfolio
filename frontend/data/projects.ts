@@ -1,25 +1,43 @@
+import {
+  getFeaturedGitHubProjects,
+  getGitHubProjects,
+  type GitHubProject,
+} from "@/lib/api";
+
 export type Project = {
   title: string;
   description?: string;
-  tech?: string[];
   link?: string;
   githubUrl?: string;
-  type?: string;
-  platform?: string;
+  tech?: string[];
   stars?: number;
   forks?: number;
+  type?: string;
+  platform?: string;
+  imageUrl?: string;
 };
 
-export const projects: Project[] = [
-  {
-    title: "Clean Water & Sanitation System",
-    description: "Backend + APIs for management modules with validation and auth.",
-    tech: ["Node.js", "Express", "MongoDB"],
-    link: "https://github.com/yourname/repo",
-    githubUrl: "https://github.com/yourname/repo",
-    type: "Full Stack",
-    platform: "Web",
-    stars: 0,
-    forks: 0,
-  },
-];
+function mapGitHubProjectToProject(item: GitHubProject): Project {
+  return {
+    title: item.customTitle?.trim() || item.name,
+    description: item.customDescription?.trim() || item.description || "",
+    link: item.liveUrl?.trim() || item.htmlUrl,
+    githubUrl: item.htmlUrl,
+    tech: Array.isArray(item.topics) ? item.topics : [],
+    stars: item.stars ?? 0,
+    forks: item.forks ?? 0,
+    type: item.type?.trim() || "",
+    platform: item.platform?.trim() || "",
+    imageUrl: item.imageUrl?.trim() || "",
+  };
+}
+
+export async function getProjects(): Promise<Project[]> {
+  const items = await getGitHubProjects();
+  return items.map(mapGitHubProjectToProject);
+}
+
+export async function getFeaturedProjects(limit = 3): Promise<Project[]> {
+  const items = await getFeaturedGitHubProjects(limit);
+  return items.map(mapGitHubProjectToProject);
+}

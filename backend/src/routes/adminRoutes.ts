@@ -3,6 +3,9 @@ import jwt from "jsonwebtoken";
 import { adminAuth } from "../middleware/adminAuth";
 import { GitHubProject } from "../models/GitHubProject";
 import { syncGitHubProjectsToDb } from "../jobs/githubSyncJob";
+import cloudinary from "../config/cloudinary";
+import { upload } from "../middleware/upload";
+import streamifier from "streamifier";
 
 const router = Router();
 
@@ -126,6 +129,10 @@ router.patch("/projects/:id", adminAuth, async (req, res) => {
       "customTitle",
       "customDescription",
       "liveUrl",
+      "type",
+      "platform",
+      "imageUrl",
+      "imagePublicId",
     ] as const;
 
     const update: Record<string, any> = {};
@@ -174,6 +181,93 @@ router.post("/github/sync", adminAuth, async (_req, res) => {
   } catch (err: any) {
     console.error("POST /api/admin/github/sync error:", err?.message || err);
     return res.status(500).json({ message: "Sync failed" });
+  }
+});
+
+// Image upload route (for GitHub projects)
+router.post(
+  "/projects/:id/image",
+  adminAuth,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!req.file) {
+        return res.status(400).json({ message: "Image file is required" });
+      }
+
+      const project = await GitHubProject.findById(id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "portfolio-projects",
+            resource_type: "image",
+            public_id: `project-${project.repoId}-${Date.now()}`,
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+
+        streamifier.createReadStream(req.file!.buffer).pipe(uploadStream);
+      });
+
+      if (project.imagePublicId) {
+        try {
+          await cloudinary.uploader.destroy(project.imagePublicId, {
+            resource_type: "image",
+          });
+        } catch {
+          // ignore old image delete failure
+        }
+      }
+
+      project.imageUrl = result.secure_url;
+      project.imagePublicId = result.public_id;
+      await project.save();
+
+      return res.json(project.toObject());
+    } catch (err: any) {
+      console.error("POST /api/admin/projects/:id/image error:", err?.message || err);
+      return res.status(500).json({ message: "Image upload failed" });
+    }
+  }
+);
+
+// DELETE /api/admin/projects/:id/image
+router.delete("/projects/:id/image", adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const project = await GitHubProject.findById(id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    if (project.imagePublicId) {
+      try {
+        await cloudinary.uploader.destroy(project.imagePublicId, {
+          resource_type: "image",
+        });
+      } catch {
+        // ignore
+      }
+    }
+
+    project.imageUrl = "";
+    project.imagePublicId = "";
+    await project.save();
+
+    return res.json(project.toObject());
+  } catch (err: any) {
+    console.error("DELETE /api/admin/projects/:id/image error:", err?.message || err);
+    return res.status(500).json({ message: "Failed to remove image" });
   }
 });
 

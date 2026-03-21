@@ -1,5 +1,4 @@
 import mongoose, { Schema, model, models, type Model } from "mongoose";
-
 export interface IGitHubProject {
   repoId: number;
 
@@ -27,9 +26,11 @@ export interface IGitHubProject {
   customDescription?: string;
   liveUrl?: string;
 
-  // NEW
   type?: string;
   platform?: string;
+
+  imageUrl?: string;
+  imagePublicId?: string;
 }
 
 const GitHubProjectSchema = new Schema<IGitHubProject>(
@@ -60,9 +61,11 @@ const GitHubProjectSchema = new Schema<IGitHubProject>(
     customDescription: { type: String, trim: true, default: "" },
     liveUrl: { type: String, trim: true, default: "" },
 
-    // NEW
     type: { type: String, trim: true, default: "" },
     platform: { type: String, trim: true, default: "" },
+
+    imageUrl: { type: String, trim: true, default: "" },
+    imagePublicId: { type: String, trim: true, default: "" },
   },
   { timestamps: true }
 );
