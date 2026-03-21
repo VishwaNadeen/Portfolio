@@ -94,39 +94,39 @@ export default function AboutInterests() {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-3xl p-5 sm:p-6 md:p-8">
+    <section className="relative overflow-hidden rounded-2xl p-4 sm:rounded-3xl sm:p-5 md:p-8">
       {/* glow effects */}
-      <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-cyan-500/10 blur-3xl sm:-right-20 sm:-top-20 sm:h-48 sm:w-48" />
-      <div className="pointer-events-none absolute -left-16 -bottom-16 h-36 w-36 rounded-full bg-violet-500/10 blur-3xl sm:-left-20 sm:-bottom-20 sm:h-48 sm:w-48" />
+      <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-cyan-500/10 blur-3xl sm:-right-16 sm:-top-16 sm:h-36 sm:w-36 md:-right-20 md:-top-20 md:h-48 md:w-48" />
+      <div className="pointer-events-none absolute -left-10 -bottom-10 h-24 w-24 rounded-full bg-violet-500/10 blur-3xl sm:-left-16 sm:-bottom-16 sm:h-36 sm:w-36 md:-left-20 md:-bottom-20 md:h-48 md:w-48" />
 
-      <div className="relative space-y-6 sm:space-y-8">
+      <div className="relative space-y-5 sm:space-y-6 md:space-y-8">
         {/* title */}
-        <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
+        <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl md:text-3xl">
           Interests
         </h2>
 
         {/* cards */}
-        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 md:gap-6">
           {items.map((item) => {
             const styles = getAccent(item.accent);
             return (
               <div
-              key={item.title}
-              className="relative overflow-hidden space-y-3 rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 sm:p-5"
-            >
-              {/* remove the card inner glow div entirely */}
+                key={item.title}
+                className="relative overflow-hidden space-y-3 rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 sm:p-5"
+              >
+                {/* remove the card inner glow div entirely */}
 
-              <div className="flex items-center gap-2.5">
-                <span className={`h-2 w-2 rounded-full ${styles.dot}`} />
-                <h3 className={`text-base font-semibold sm:text-lg ${styles.title}`}>
-                  {item.title}
-                </h3>
+                <div className="flex items-start gap-2.5 sm:items-center">
+                  <span className={`mt-1 h-2 w-2 shrink-0 rounded-full sm:mt-0 ${styles.dot}`} />
+                  <h3 className={`text-sm font-semibold leading-6 sm:text-base md:text-lg ${styles.title}`}>
+                    {item.title}
+                  </h3>
+                </div>
+
+                <p className="text-justify text-sm leading-7 text-slate-300 md:text-base">
+                  {item.desc}
+                </p>
               </div>
-
-              <p className="text-justify text-sm leading-7 text-slate-300 md:text-base">
-                {item.desc}
-              </p>
-            </div>
             );
           })}
         </div>

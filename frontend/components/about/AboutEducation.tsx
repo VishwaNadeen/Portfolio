@@ -51,62 +51,66 @@ export default function AboutEducation() {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-3xl p-5 sm:p-6 md:p-8">
+    <section className="relative overflow-hidden rounded-2xl p-4 sm:rounded-3xl sm:p-5 md:p-8">
       {/* background glow */}
-      <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-cyan-500/10 blur-3xl sm:-right-20 sm:-top-20 sm:h-48 sm:w-48" />
-      <div className="pointer-events-none absolute -left-16 -bottom-16 h-36 w-36 rounded-full bg-violet-500/10 blur-3xl sm:-left-20 sm:-bottom-20 sm:h-48 sm:w-48" />
+      <div className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-cyan-500/10 blur-3xl sm:-right-16 sm:-top-16 sm:h-36 sm:w-36 md:-right-20 md:-top-20 md:h-48 md:w-48" />
+      <div className="pointer-events-none absolute -left-12 -bottom-12 h-28 w-28 rounded-full bg-violet-500/10 blur-3xl sm:-left-16 sm:-bottom-16 sm:h-36 sm:w-36 md:-left-20 md:-bottom-20 md:h-48 md:w-48" />
 
       <div className="relative">
         {/* title */}
-        <h2 className="mb-8 text-xl font-bold tracking-tight text-white sm:mb-10 sm:text-2xl md:text-3xl">
+        <h2 className="mb-6 text-lg font-bold tracking-tight text-white sm:mb-8 sm:text-xl md:mb-10 md:text-3xl">
           Education
         </h2>
 
         {/* timeline */}
-        <div className="relative pl-6 sm:pl-8">
+        <div className="relative pl-5 sm:pl-6 md:pl-8">
           {/* vertical line */}
-          <div className="absolute bottom-2 left-2.5 top-2 w-px bg-gradient-to-b from-cyan-400/60 via-white/10 to-violet-400/60 sm:left-3" />
+          <div className="absolute bottom-2 left-2 top-2 w-px bg-gradient-to-b from-cyan-400/60 via-white/10 to-violet-400/60 sm:left-2.5 md:left-3" />
 
           {education.map((item, index) => {
             const styles = getAccent(item.accent);
             return (
               <div
                 key={item.type}
-                className={`relative ${index !== education.length - 1 ? "mb-10 sm:mb-14" : ""}`}
+                className={`relative ${index !== education.length - 1 ? "mb-8 sm:mb-10 md:mb-14" : ""}`}
               >
                 {/* dot */}
                 <div
-                  className={`absolute -left-[1.2rem] top-3 h-3 w-3 rounded-full border sm:-left-[1.55rem] ${styles.dot}`}
+                  className={`absolute -left-[0.95rem] top-3 h-2.5 w-2.5 rounded-full border sm:-left-[1.2rem] sm:h-3 sm:w-3 md:-left-[1.55rem] ${styles.dot}`}
                 />
 
                 {/* header row */}
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   {/* logo placeholder */}
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-[10px] font-bold tracking-wider sm:h-14 sm:w-14 sm:text-xs ${styles.logo}`}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border px-1 text-[9px] font-bold tracking-wider sm:h-12 sm:w-12 sm:rounded-xl sm:text-[10px] md:h-14 md:w-14 md:text-xs ${styles.logo}`}
                   >
                     {item.initial}
                   </div>
 
                   {/* info */}
-                  <div className="flex-1 space-y-1">
+                  <div className="min-w-0 flex-1 space-y-1">
                     {/* type + period */}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className={`text-[11px] font-medium uppercase tracking-[0.2em] sm:text-xs ${styles.type}`}>
+                    <div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+                      <p
+                        className={`text-[10px] font-medium uppercase tracking-[0.18em] sm:text-[11px] md:text-xs ${styles.type}`}
+                      >
                         {item.type}
                       </p>
-                      <span className={`text-[11px] font-medium sm:text-xs ${styles.period}`}>
+                      <span
+                        className={`text-[10px] font-medium sm:text-[11px] md:text-xs ${styles.period}`}
+                      >
                         {item.period}
                       </span>
                     </div>
 
                     {/* institution */}
-                    <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">
+                    <h3 className="text-sm font-semibold leading-snug text-white sm:text-base md:text-lg">
                       {item.institution}
                     </h3>
 
                     {/* degree */}
-                    <p className="text-sm text-slate-400">
+                    <p className="text-xs leading-6 text-slate-400 sm:text-sm">
                       {item.degree}
                       {item.specialization && (
                         <>
@@ -119,7 +123,7 @@ export default function AboutEducation() {
                 </div>
 
                 {/* description */}
-                <p className="mt-4 text-justify text-sm leading-7 text-slate-300 sm:leading-8 md:text-base">
+                <p className="mt-3 text-left text-sm leading-6 text-slate-300 sm:mt-4 sm:text-sm sm:leading-7 md:text-base md:leading-8">
                   {item.desc}
                 </p>
               </div>

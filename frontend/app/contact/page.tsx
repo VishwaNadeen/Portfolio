@@ -187,11 +187,11 @@ export default function ContactPage() {
         {/* Ambient blobs */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
-            className="absolute h-[320px] w-[320px] rounded-full bg-cyan-500/5 blur-3xl sm:h-[420px] sm:w-[420px] md:h-[520px] md:w-[520px]"
+            className="absolute h-[220px] w-[220px] rounded-full bg-cyan-500/5 blur-3xl sm:h-[420px] sm:w-[420px] md:h-[520px] md:w-[520px]"
             style={{ top: "6%", left: "62%" }}
           />
           <div
-            className="absolute h-[280px] w-[280px] rounded-full bg-blue-500/5 blur-3xl sm:h-[360px] sm:w-[360px] md:h-[460px] md:w-[460px]"
+            className="absolute h-[220px] w-[220px] rounded-full bg-blue-500/5 blur-3xl sm:h-[360px] sm:w-[360px] md:h-[460px] md:w-[460px]"
             style={{ top: "64%", left: "0%" }}
           />
         </div>
@@ -202,7 +202,7 @@ export default function ContactPage() {
             toast.show
               ? "translate-y-0 opacity-100"
               : "-translate-y-2 opacity-0"
-          } left-1/2 top-[4.75rem] w-[min(calc(100vw-1.5rem),22rem)] -translate-x-1/2 px-0 sm:left-auto sm:right-6 sm:top-20 sm:w-full sm:max-w-sm sm:translate-x-0`}
+          } left-1/2 top-[4.5rem] w-[min(calc(100vw-1rem),22rem)] -translate-x-1/2 px-0 sm:left-auto sm:right-6 sm:top-20 sm:w-full sm:max-w-sm sm:translate-x-0`}
         >
           <div
             className={`pointer-events-auto flex items-start gap-2 rounded-xl border px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3 ${
@@ -229,18 +229,16 @@ export default function ContactPage() {
           </div>
         </div>
 
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:py-10 md:px-6 md:py-16">
-          <section className="relative overflow-hidden rounded-3xl bg-white/[0.03] p-5 backdrop-blur-xl sm:p-6 md:p-10">
-            <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
-            <div className="pointer-events-none absolute -left-24 -bottom-24 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
+        <div className="relative z-10 mx-auto max-w-5xl px-3 py-6 sm:px-4 sm:py-10 md:px-6 md:py-16">
+          <section className="relative overflow-hidden rounded-2xl bg-white/[0.03] p-4 backdrop-blur-xl sm:rounded-3xl sm:p-6 md:p-10">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
+            <div className="pointer-events-none absolute -left-24 -bottom-24 h-44 w-44 rounded-full bg-blue-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
 
             <div className="relative space-y-3 sm:space-y-4">
-              {/* ── Typing-animated heading ── */}
               <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-4xl">
                 <span className="bg-gradient-to-r from-white via-cyan-100 to-white bg-clip-text text-transparent">
                   {displayedHeading}
                 </span>
-                {/* Cursor: hidden once user starts typing in the form */}
                 {!formTouched && (
                   <span
                     className={`ml-0.5 inline-block w-[2px] align-middle transition-opacity duration-100 ${
@@ -252,7 +250,7 @@ export default function ContactPage() {
                 )}
               </h1>
 
-              <p className="max-w-3xl text-sm leading-7 text-slate-300 sm:leading-8 md:text-base">
+              <p className="max-w-3xl text-sm leading-6 text-slate-300 sm:leading-8 md:text-base">
                 Have a question, idea, project, or just want to connect? Fill
                 out the form below and send me a message.
               </p>
@@ -262,7 +260,7 @@ export default function ContactPage() {
               onSubmit={handleSubmit}
               className="relative mt-6 space-y-5 sm:mt-8"
             >
-              <div className="grid gap-5 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
                 {/* Name */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-200">
@@ -306,7 +304,7 @@ export default function ContactPage() {
 
               {/* Message */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <label className="text-sm font-medium text-slate-200">
                     Message
                   </label>
@@ -329,7 +327,7 @@ export default function ContactPage() {
                   }
                   onInput={() => setFormTouched(true)}
                   placeholder="Write your message here..."
-                  className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400/50 focus:bg-white/[0.06]"
+                  className="min-h-[180px] w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400/50 focus:bg-white/[0.06] sm:min-h-[196px]"
                 />
                 {errors.message && (
                   <p className="text-sm text-red-400">{errors.message}</p>

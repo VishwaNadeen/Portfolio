@@ -96,18 +96,18 @@ function getAccentClasses(accent: string) {
 
 export default function AboutSkills() {
   return (
-    <section className="relative overflow-hidden rounded-[32px] p-5 sm:p-6 md:p-8">
+    <section className="relative overflow-hidden rounded-2xl p-4 sm:rounded-[32px] sm:p-5 md:p-8">
       {/* glow effects */}
-      <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-cyan-500/10 blur-3xl sm:-right-20 sm:-top-20 sm:h-48 sm:w-48" />
-      <div className="pointer-events-none absolute -left-16 -bottom-16 h-36 w-36 rounded-full bg-blue-500/10 blur-3xl sm:-left-20 sm:-bottom-20 sm:h-48 sm:w-48" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/5 blur-3xl sm:h-48 sm:w-48" />
+      <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-cyan-500/10 blur-3xl sm:-right-16 sm:-top-16 sm:h-36 sm:w-36 md:-right-20 md:-top-20 md:h-48 md:w-48" />
+      <div className="pointer-events-none absolute -left-10 -bottom-10 h-24 w-24 rounded-full bg-blue-500/10 blur-3xl sm:-left-16 sm:-bottom-16 sm:h-36 sm:w-36 md:-left-20 md:-bottom-20 md:h-48 md:w-48" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/5 blur-3xl sm:h-36 sm:w-36 md:h-48 md:w-48" />
 
-      <div className="relative space-y-6 sm:space-y-8">
-        <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
+      <div className="relative space-y-5 sm:space-y-6 md:space-y-8">
+        <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl md:text-3xl">
           Tech Stack
         </h2>
 
-        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3">
           {skillGroups.map((group) => {
             const styles = getAccentClasses(group.accent);
 
@@ -116,9 +116,9 @@ export default function AboutSkills() {
                 key={group.title}
                 className="rounded-3xl p-4 transition-all duration-300 hover:-translate-y-1 sm:p-5"
               >
-                <div className="mb-3 flex items-center gap-3 sm:mb-4">
-                  <span className={`h-2.5 w-2.5 rounded-full ${styles.dot}`} />
-                  <h3 className={`text-base font-semibold sm:text-lg ${styles.title}`}>
+                <div className="mb-2.5 flex items-center gap-2.5 sm:mb-3 sm:gap-3 md:mb-4">
+                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${styles.dot}`} />
+                  <h3 className={`text-sm font-semibold sm:text-base md:text-lg ${styles.title}`}>
                     {group.title}
                   </h3>
                 </div>
@@ -127,7 +127,7 @@ export default function AboutSkills() {
                   {group.skills.map((skill) => (
                     <span
                       key={skill}
-                      className={`rounded-full border px-3 py-1 text-xs sm:text-sm ${styles.tag}`}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] sm:px-3 sm:text-xs md:text-sm ${styles.tag}`}
                     >
                       {skill}
                     </span>

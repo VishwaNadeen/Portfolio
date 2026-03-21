@@ -4,28 +4,44 @@ import { useEffect, useState } from "react";
 import { getPublicCv, getPublicCvDownloadUrl } from "@/lib/cvApi";
 
 export default function FloatingCvButton() {
-  const [hasCv, setHasCv] = useState(false);
+  const [hasCv, setHasCv] = useState<boolean | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function checkCv() {
       try {
         const cv = await getPublicCv();
-        setHasCv(!!cv);
+        if (isMounted) setHasCv(!!cv);
       } catch {
-        setHasCv(false);
+        if (isMounted) setHasCv(false);
       }
     }
 
     checkCv();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  if (!hasCv) return null;
+  if (hasCv !== true) return null;
 
   return (
     <a
       href={getPublicCvDownloadUrl()}
       download
-      className="fixed bottom-6 right-4 z-50 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/40 bg-cyan-400/10 px-4 py-2.5 text-xs font-semibold text-cyan-300 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:bg-cyan-400/20 hover:text-cyan-200 sm:bottom-6 sm:right-6 sm:px-5 sm:py-3 sm:text-sm"
+      className="
+        fixed right-3 sm:right-6 z-50
+        inline-flex items-center gap-2
+        rounded-2xl border border-cyan-400/40
+        bg-cyan-400/10 px-4 py-2.5
+        text-xs font-semibold text-cyan-300
+        backdrop-blur transition-all duration-300
+        hover:-translate-y-1 hover:bg-cyan-400/20 hover:text-cyan-200
+        sm:px-5 sm:py-3 sm:text-sm
+      "
+      style={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}
     >
       ⬇ Download CV
     </a>
