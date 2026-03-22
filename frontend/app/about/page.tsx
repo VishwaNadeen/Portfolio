@@ -1,11 +1,11 @@
-import AboutHero from "@/components/about/AboutHero";
-import AboutEducation from "@/components/about/AboutEducation";
-import AboutJourney from "@/components/about/AboutJourney";
-import AboutSkills from "@/components/about/AboutSkills";
-import AboutInterests from "@/components/about/AboutInterests";
+import AboutHero from "@/sections/about/AboutHero";
+import AboutEducation from "@/sections/about/AboutEducation";
+import AboutJourney from "@/sections/about/AboutJourney";
+import AboutSkills from "@/sections/about/AboutSkills";
+import AboutInterests from "@/sections/about/AboutInterests";
 import PageTransition from "@/components/animation/PageTransition";
-import FloatingCvButton from "@/components/about/FloatingCvButton";
-import ScrollToTopButton from "@/components/ScrollToTopButton";
+import FloatingCvButton from "@/sections/about/FloatingCvButton";
+import ScrollToTopButton from "@/components/comon/ScrollToTopButton";
 import BackgroundAnimation from "@/components/animation/BackgroundAnimation";
 
 export default function AboutPage() {

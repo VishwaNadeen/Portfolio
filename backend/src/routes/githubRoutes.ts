@@ -34,10 +34,14 @@ router.get("/featured", async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit || 3), 12);
 
-    const items = await GitHubProject.find(PUBLIC_FILTER)
+    const items = await GitHubProject.find({
+      ...PUBLIC_FILTER,
+      featured: true,
+    })
       .sort({
+        displayOrder: 1,
+        updatedAt: -1,
         pushedAt: -1,
-        updatedAtGithub: -1,
         stars: -1,
       })
       .limit(limit)

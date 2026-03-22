@@ -1,5 +1,5 @@
-import ProjectCard from "../../components/projectCard";
-import ScrollToTopButton from "@/components/ScrollToTopButton";
+import ProjectCard from "../../components/cards/projectCard";
+import ScrollToTopButton from "@/components/comon/ScrollToTopButton";
 import BackgroundAnimation from "@/components/animation/BackgroundAnimation";
 
 export const revalidate = 0;
