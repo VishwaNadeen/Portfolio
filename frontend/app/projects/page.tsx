@@ -1,6 +1,15 @@
 import ProjectCard from "../../components/cards/projectCard";
 import ScrollToTopButton from "@/components/comon/ScrollToTopButton";
 import BackgroundAnimation from "@/components/animation/BackgroundAnimation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Projects | Vishwa Nadeen",
+  description: "Explore projects by Vishwa Nadeen.",
+  alternates: {
+    canonical: "https://vishwanadeen.lk/projects",
+  },
+};
 
 export const revalidate = 0;
 export const dynamic = "force-dynamic";

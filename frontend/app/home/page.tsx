@@ -8,6 +8,15 @@ import VisitTracker from "@/sections/home/VisitTracker";
 import BackgroundAnimation from "@/components/animation/BackgroundAnimation";
 import FeaturedProjects from "@/sections/home/FeaturedProjects";
 import GithubLanguages from "@/sections/home/GithubLanguages";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Vishwa Nadeen | Full Stack Developer Portfolio",
+  description: "Portfolio of Vishwa Nadeen - Full Stack Developer",
+  alternates: {
+    canonical: "https://vishwanadeen.lk/",
+  },
+};
 
 type StatsResponse = {
   github: null | {

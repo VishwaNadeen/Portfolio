@@ -7,6 +7,15 @@ import PageTransition from "@/components/animation/PageTransition";
 import FloatingCvButton from "@/sections/about/FloatingCvButton";
 import ScrollToTopButton from "@/components/comon/ScrollToTopButton";
 import BackgroundAnimation from "@/components/animation/BackgroundAnimation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About Vishwa Nadeen",
+  description: "Learn more about Vishwa Nadeen, Full Stack Developer and portfolio owner.",
+  alternates: {
+    canonical: "https://vishwanadeen.lk/about",
+  },
+};
 
 export default function AboutPage() {
   return (
