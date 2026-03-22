@@ -1,22 +1,22 @@
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: "https://www.vishwanadeen.lk",
-      lastModified: new Date(),
+      url: "https://www.vishwanadeen.lk/",
+      priority: 1,
     },
     {
       url: "https://www.vishwanadeen.lk/about",
-      lastModified: new Date(),
+      priority: 0.8,
     },
     {
       url: "https://www.vishwanadeen.lk/projects",
-      lastModified: new Date(),
+      priority: 0.9,
     },
     {
       url: "https://www.vishwanadeen.lk/contact",
-      lastModified: new Date(),
+      priority: 0.7,
     },
   ];
 }
