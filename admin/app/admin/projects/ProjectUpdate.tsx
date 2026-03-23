@@ -18,6 +18,8 @@ const DESCRIPTION_LIMIT = 100;
 const DEFAULT_PROJECT_IMAGE =
   "https://images.unsplash.com/photo-1498050108023-c5249f4df085";
 
+const PLATFORM_OPTIONS = ["", "Android App", "iOS App", "Web App", "Mobile App"];
+
 export default function ProjectUpdate({
   editing,
   setEditing,
@@ -155,6 +157,26 @@ export default function ProjectUpdate({
                   )
                 }
               />
+            </label>
+
+            <label className="block text-xs text-slate-400">
+              Platform
+              <select
+                className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-white outline-none focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/10"
+                value={editing.platform || ""}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev ? { ...prev, platform: e.target.value } : prev
+                  )
+                }
+              >
+                <option value="">Select platform</option>
+                {PLATFORM_OPTIONS.filter(Boolean).map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="block text-xs text-slate-400">

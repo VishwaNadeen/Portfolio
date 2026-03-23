@@ -21,7 +21,7 @@ function mapGitHubProjectToProject(item: GitHubProject): Project {
   return {
     title: item.customTitle?.trim() || item.name,
     description: item.customDescription?.trim() || item.description || "",
-    link: item.liveUrl?.trim() || item.htmlUrl,
+    link: item.liveUrl?.trim() || "",
     githubUrl: item.htmlUrl,
     tech: Array.isArray(item.topics) ? item.topics : [],
     stars: item.stars ?? 0,

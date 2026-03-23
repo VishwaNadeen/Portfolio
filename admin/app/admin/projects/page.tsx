@@ -113,6 +113,7 @@ export default function AdminProjectsPage() {
       const updated = await adminUpdateProject(editing._id, {
         customTitle: editing.customTitle || "",
         customDescription: editing.customDescription || "",
+        platform: editing.platform || "",
       });
 
       setItems((prev) =>
@@ -159,14 +160,12 @@ export default function AdminProjectsPage() {
   return (
     <RequireAuth>
       <div className="relative space-y-4 px-3 sm:space-y-6 sm:px-0">
-        {/* background glow */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-16 left-0 h-52 w-52 rounded-full bg-cyan-500/10 blur-3xl sm:-top-20 sm:h-64 sm:w-64 md:h-72 md:w-72" />
           <div className="absolute right-0 top-20 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
           <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-sky-500/5 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
         </div>
 
-        {/* top hero */}
         <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 p-4 shadow-[0_20px_70px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:rounded-3xl sm:p-6 md:p-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_30%)]" />
 
@@ -200,7 +199,6 @@ export default function AdminProjectsPage() {
           </div>
         </section>
 
-        {/* stats cards */}
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
           <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-400/20 hover:bg-white/[0.06] sm:p-5">
             <div className="flex items-start justify-between gap-3">
@@ -273,7 +271,6 @@ export default function AdminProjectsPage() {
           </div>
         )}
 
-        {/* desktop/table */}
         <section className="hidden overflow-hidden rounded-3xl border border-white/10 bg-slate-950/50 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl md:block">
           <div className="border-b border-white/10 px-4 py-4 sm:px-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -428,7 +425,6 @@ export default function AdminProjectsPage() {
           )}
         </section>
 
-        {/* mobile/cards */}
         <section className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/50 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl md:hidden">
           <div className="border-b border-white/10 px-4 py-4">
             <div className="flex flex-col gap-3">
