@@ -108,7 +108,7 @@ export default function ProjectCard({ project }: { project: Project }) {
         </div>
 
         <div className="flex min-h-[48px] items-start justify-between gap-3 sm:min-h-[56px]">
-          <h3 className="line-clamp-2 min-w-0 text-sm font-semibold text-white transition-colors duration-300 group-hover:text-cyan-200 sm:text-lg">
+          <h3 className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold text-white transition-colors duration-300 group-hover:text-cyan-200 sm:text-lg">
             {project.title}
           </h3>
 
@@ -120,27 +120,27 @@ export default function ProjectCard({ project }: { project: Project }) {
         <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
           {project.type ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-cyan-400/10 px-3 py-1 text-[11px] font-medium text-cyan-300">
-              <Layers3 className="h-3.5 w-3.5" />
-              {project.type}
+              <Layers3 className="h-3.5 w-3.5 shrink-0" />
+              <span className="whitespace-nowrap">{project.type}</span>
             </span>
           ) : null}
 
           {project.platform ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-3 py-1 text-[11px] font-medium text-white/70">
-              <Globe className="h-3.5 w-3.5" />
-              {project.platform}
+              <Globe className="h-3.5 w-3.5 shrink-0" />
+              <span className="whitespace-nowrap">{project.platform}</span>
             </span>
           ) : null}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/50 sm:mt-4">
           <div className="flex items-center gap-1.5 transition-colors duration-300 group-hover:text-yellow-300">
-            <Star className="h-4 w-4" />
+            <Star className="h-4 w-4 shrink-0" />
             <span>{project.stars ?? 0}</span>
           </div>
 
           <div className="flex items-center gap-1.5 transition-colors duration-300 group-hover:text-cyan-300">
-            <GitFork className="h-4 w-4" />
+            <GitFork className="h-4 w-4 shrink-0" />
             <span>{project.forks ?? 0}</span>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function ProjectCard({ project }: { project: Project }) {
           >
             <p
               ref={descriptionInnerRef}
-              className="text-sm leading-6 text-white/65 whitespace-pre-line text-justify transition-transform duration-700 ease-in-out"
+              className="whitespace-pre-line text-justify text-sm leading-6 text-white/65 transition-transform duration-700 ease-in-out"
               style={{
                 transform: `translateY(-${
                   descriptionPage * DESCRIPTION_PAGE_HEIGHT
@@ -170,7 +170,7 @@ export default function ProjectCard({ project }: { project: Project }) {
           {tech.map((t, index) => (
             <span
               key={t}
-              className="rounded-full bg-white/[0.05] px-3 py-1 text-xs text-white/75 transition-all duration-300 group-hover:bg-cyan-400/10 group-hover:text-cyan-100"
+              className="break-words rounded-full bg-white/[0.05] px-3 py-1 text-xs text-white/75 transition-all duration-300 group-hover:bg-cyan-400/10 group-hover:text-cyan-100"
               style={{ transitionDelay: `${index * 35}ms` }}
             >
               {t}

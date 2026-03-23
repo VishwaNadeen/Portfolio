@@ -150,12 +150,12 @@ export default function ProjectUpdate({
         }
       `}</style>
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(1,4,12,0.92)] p-4 font-sans backdrop-blur-[8px]">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(1,4,12,0.92)] p-2 font-sans backdrop-blur-[8px] sm:p-4">
         <form
           onSubmit={handleSubmit}
           className="flex w-full max-w-[600px] flex-col overflow-hidden rounded-[9px] border border-[#1a2d46] bg-[#040c1a] shadow-[0_0_0_1px_#060e1c,0_40px_100px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.03)]"
           style={{
-            maxHeight: "calc(100vh - 40px)",
+            maxHeight: "calc(100dvh - 16px)",
             animation: "pu-in 0.2s cubic-bezier(0.16,1,0.3,1)",
           }}
         >
@@ -167,7 +167,7 @@ export default function ProjectUpdate({
             }}
           />
 
-          <div className="flex shrink-0 items-center gap-3 border-b border-[#0e1a2e] bg-[#050d1c] px-4 py-[13px] sm:px-5">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[#0e1a2e] bg-[#050d1c] px-3 py-[13px] sm:flex-nowrap sm:gap-3 sm:px-5">
             <div className="flex shrink-0 gap-[6px]">
               {["#2a1010", "#1f1a09", "#0a1f0e"].map((bg, i) => (
                 <span
@@ -181,29 +181,29 @@ export default function ProjectUpdate({
               ))}
             </div>
 
-            <div className="h-[14px] w-px shrink-0 bg-[#1a2d46]" />
+            <div className="hidden h-[14px] w-px shrink-0 bg-[#1a2d46] sm:block" />
 
-            <div className="font-mono text-[11px] whitespace-nowrap text-[#3a5570] shrink-0">
+            <div className="font-mono shrink-0 text-[10px] whitespace-nowrap text-[#3a5570] sm:text-[11px]">
               admin / projects /
             </div>
-            <div className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[11px] text-[#4a6680]">
+            <div className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[10px] text-[#4a6680] sm:text-[11px]">
               {editing.fullName || editing.name}
             </div>
 
-            <span className="shrink-0 rounded-[3px] border border-[#1e3a6a] bg-[#0c2044] px-[9px] py-[3px] font-mono text-[10px] font-semibold leading-[1.7] tracking-[0.1em] text-[#60a5fa]">
+            <span className="shrink-0 rounded-[3px] border border-[#1e3a6a] bg-[#0c2044] px-[7px] py-[3px] font-mono text-[9px] font-semibold leading-[1.7] tracking-[0.1em] text-[#60a5fa] sm:px-[9px] sm:text-[10px]">
               EDIT MODE
             </span>
 
             <button
               type="button"
               onClick={() => setEditing(null)}
-              className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[4px] border border-[#1a2d46] bg-transparent text-[#3a5570] transition-all duration-150 hover:border-[#4a1010] hover:bg-[#1a0808] hover:text-[#ef4444]"
+              className="ml-auto flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[4px] border border-[#1a2d46] bg-transparent text-[#3a5570] transition-all duration-150 hover:border-[#4a1010] hover:bg-[#1a0808] hover:text-[#ef4444] sm:ml-0"
             >
               <X size={13} />
             </button>
           </div>
 
-          <div className="flex shrink-0 items-center gap-[10px] border-b border-[#0b1524] bg-[#040c1a] px-4 py-[10px] sm:px-5">
+          <div className="flex shrink-0 items-center gap-[10px] border-b border-[#0b1524] bg-[#040c1a] px-3 py-[10px] sm:px-5">
             <div
               className="h-[7px] w-[7px] shrink-0 rounded-full"
               style={{
@@ -211,15 +211,15 @@ export default function ProjectUpdate({
                 boxShadow: "0 0 8px #1d4ed870",
               }}
             />
-            <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-semibold text-[#94a3b8]">
+            <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-semibold text-[#94a3b8] sm:text-[14px]">
               {editing.customTitle || editing.name}
             </span>
-            <span className="shrink-0 font-mono text-[10px] tracking-[0.08em] text-[#2a4060]">
+            <span className="shrink-0 font-mono text-[9px] tracking-[0.08em] text-[#2a4060] sm:text-[10px]">
               #{(editing._id ?? "").toUpperCase().slice(-6)}
             </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+          <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-5 sm:py-5">
             <div className="flex flex-col gap-6">
               <div>
                 <div className="mb-4 flex items-center gap-[10px] font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#3a5570] before:h-px before:flex-1 before:bg-[#1a2d46] after:h-px after:flex-1 after:bg-[#1a2d46]">
@@ -251,13 +251,13 @@ export default function ProjectUpdate({
                       <button
                         type="button"
                         onClick={() => setDropdownOpen((o) => !o)}
-                        className={`flex w-full items-center justify-between rounded-[6px] border bg-[#060f1e] px-[14px] py-[10px] text-[14px] transition-all duration-150 ${
+                        className={`flex w-full items-center justify-between gap-3 rounded-[6px] border bg-[#060f1e] px-[14px] py-[10px] text-[14px] transition-all duration-150 ${
                           dropdownOpen
                             ? "border-[#2563eb70] shadow-[0_0_0_3px_#1e40af1a]"
                             : "border-[#1a2d46]"
                         }`}
                       >
-                        <span className="flex items-center gap-[10px]">
+                        <span className="min-w-0 flex items-center gap-[10px] overflow-hidden">
                           {currentMeta ? (
                             <>
                               <span
@@ -270,7 +270,7 @@ export default function ProjectUpdate({
                                 {currentMeta.icon}
                               </span>
                               <span
-                                className="font-medium"
+                                className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-medium"
                                 style={{ color: currentMeta.color }}
                               >
                                 {currentPlatform}
@@ -282,7 +282,7 @@ export default function ProjectUpdate({
                         </span>
                         <ChevronDown
                           size={14}
-                          className={`text-[#4a6680] transition-transform duration-150 ${
+                          className={`shrink-0 text-[#4a6680] transition-transform duration-150 ${
                             dropdownOpen ? "rotate-180" : "rotate-0"
                           }`}
                         />
@@ -310,7 +310,7 @@ export default function ProjectUpdate({
                             </span>
                             <span>None</span>
                             {!currentPlatform && (
-                              <Check size={12} className="ml-auto text-[#4a6680]" />
+                              <Check size={12} className="ml-auto shrink-0 text-[#4a6680]" />
                             )}
                           </button>
 
@@ -349,11 +349,13 @@ export default function ProjectUpdate({
                                 >
                                   {meta.icon}
                                 </span>
-                                <span>{option}</span>
+                                <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {option}
+                                </span>
                                 {isSel && (
                                   <Check
                                     size={12}
-                                    className="ml-auto"
+                                    className="ml-auto shrink-0"
                                     style={{ color: meta.color }}
                                   />
                                 )}
@@ -366,12 +368,12 @@ export default function ProjectUpdate({
                   </div>
 
                   <div>
-                    <div className="mb-[7px] flex items-center justify-between">
+                    <div className="mb-[7px] flex items-center justify-between gap-3">
                       <span className="font-mono text-[11px] font-medium tracking-[0.06em] text-[#4a6680]">
                         custom_description
                       </span>
                       <span
-                        className={`font-mono text-[11px] ${
+                        className={`shrink-0 font-mono text-[11px] ${
                           (editing.customDescription || "").length >= DESCRIPTION_LIMIT
                             ? "text-[#ef4444]"
                             : "text-[#3a5570]"
@@ -494,7 +496,7 @@ export default function ProjectUpdate({
                     Remove
                   </button>
 
-                  <div className="ml-auto flex items-center gap-[6px]">
+                  <div className="flex w-full items-center gap-[6px] sm:ml-auto sm:w-auto">
                     <AlertCircle size={12} className="shrink-0 text-[#3a5570]" />
                     <span className="font-mono text-[10px] tracking-[0.07em] text-[#3a5570]">
                       COMMITTED ON SAVE
@@ -505,12 +507,12 @@ export default function ProjectUpdate({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[#0b1524] bg-[#050d1c] px-4 py-[13px] sm:px-5">
+          <div className="flex shrink-0 flex-col gap-3 border-t border-[#0b1524] bg-[#050d1c] px-3 py-[13px] sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <span className="font-mono text-[10px] tracking-[0.1em] text-[#1a2d46]">
               PROJECT · {(editing._id ?? "").toUpperCase().slice(-8)}
             </span>
 
-            <div className="flex items-center gap-[9px]">
+            <div className="flex w-full flex-col gap-[9px] sm:w-auto sm:flex-row sm:items-center">
               <button
                 type="button"
                 onClick={() => setEditing(null)}
@@ -522,7 +524,7 @@ export default function ProjectUpdate({
               <button
                 type="submit"
                 disabled={saving || isImageProcessing}
-                className={`flex items-center gap-2 rounded-[6px] border px-[20px] py-[8px] text-[13px] font-semibold transition-all duration-150 ${
+                className={`flex items-center justify-center gap-2 rounded-[6px] border px-[20px] py-[8px] text-[13px] font-semibold transition-all duration-150 ${
                   saving || isImageProcessing
                     ? "cursor-not-allowed border-[#1a2d46] bg-[#0a1628] text-[#3a5570] opacity-50 shadow-none"
                     : "border-[#3b82f680] bg-[linear-gradient(135deg,#1e3a8a,#1d4ed8_50%,#0369a1)] text-[#dbeafe] shadow-[0_0_24px_#1d4ed830,inset_0_1px_0_rgba(255,255,255,0.08)]"
