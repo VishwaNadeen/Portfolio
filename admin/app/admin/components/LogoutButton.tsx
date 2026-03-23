@@ -21,10 +21,29 @@ export default function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="group flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-500/20 hover:text-red-200 sm:py-3"
+      className="
+        group flex w-full items-center justify-center gap-2
+        whitespace-nowrap rounded-[6px]
+        border border-[#7f1d1d50]
+        bg-[#0f0808]
+        px-[14px] py-[10px] md:py-[8px]
+        text-[12px] font-medium
+        text-[#7a3535]
+        font-sans
+        transition-all duration-150
+        hover:border-[#ef444460]
+        hover:bg-[#1a0808]
+        hover:text-[#f87171]
+        hover:shadow-[0_0_16px_#ef444412]
+      "
     >
-      <LogOut className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-0.5" />
-      Logout
+      <LogOut
+        size={13}
+        className="shrink-0 transition-transform duration-150 group-hover:-translate-x-[2px]"
+      />
+      <span className="font-mono text-[10px] tracking-[0.08em]">
+        LOGOUT
+      </span>
     </button>
   );
 }

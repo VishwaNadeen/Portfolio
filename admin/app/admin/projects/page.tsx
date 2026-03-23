@@ -23,9 +23,12 @@ import {
   RefreshCcw,
   Pencil,
   ArrowUpDown,
-  Monitor,
-  Layers3,
+  EyeOff,
+  AlertTriangle,
 } from "lucide-react";
+
+const DEFAULT_IMG =
+  "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80";
 
 export default function AdminProjectsPage() {
   const router = useRouter();
@@ -34,7 +37,6 @@ export default function AdminProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [editing, setEditing] = useState<AdminGitHubProject | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -42,7 +44,6 @@ export default function AdminProjectsPage() {
   async function load() {
     setLoading(true);
     setError(null);
-
     try {
       const data = await adminGetProjects();
       setItems(data);
@@ -52,7 +53,6 @@ export default function AdminProjectsPage() {
         router.replace("/admin/login");
         return;
       }
-
       setError("Failed to load projects");
     } finally {
       setLoading(false);
@@ -67,12 +67,10 @@ export default function AdminProjectsPage() {
     () => items.filter((p) => !p.isHidden && !p.isPrivate).length,
     [items]
   );
-
   const featuredCount = useMemo(
     () => items.filter((p) => p.featured).length,
     [items]
   );
-
   const hiddenCount = useMemo(
     () => items.filter((p) => p.isHidden).length,
     [items]
@@ -81,7 +79,6 @@ export default function AdminProjectsPage() {
   async function doSync() {
     setSyncing(true);
     setError(null);
-
     try {
       await adminSyncGitHub();
       await load();
@@ -94,7 +91,6 @@ export default function AdminProjectsPage() {
 
   async function quickToggle(id: string, patch: Partial<AdminGitHubProject>) {
     setItems((prev) => prev.map((p) => (p._id === id ? { ...p, ...patch } : p)));
-
     try {
       await adminUpdateProject(id, patch);
     } catch {
@@ -106,19 +102,14 @@ export default function AdminProjectsPage() {
   async function saveEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) return;
-
     setSaving(true);
-
     try {
       const updated = await adminUpdateProject(editing._id, {
         customTitle: editing.customTitle || "",
         customDescription: editing.customDescription || "",
         platform: editing.platform || "",
       });
-
-      setItems((prev) =>
-        prev.map((p) => (p._id === updated._id ? updated : p))
-      );
+      setItems((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
       setEditing(null);
     } catch {
       setError("Save failed");
@@ -130,7 +121,6 @@ export default function AdminProjectsPage() {
   async function handleImageUpload(projectId: string, file: File) {
     setUploadingImage(true);
     setError(null);
-
     try {
       const updated = await adminUploadProjectImage(projectId, file);
       setItems((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
@@ -145,7 +135,6 @@ export default function AdminProjectsPage() {
   async function handleImageRemove(projectId: string) {
     setUploadingImage(true);
     setError(null);
-
     try {
       const updated = await adminRemoveProjectImage(projectId);
       setItems((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
@@ -159,414 +148,455 @@ export default function AdminProjectsPage() {
 
   return (
     <RequireAuth>
-      <div className="relative space-y-4 px-3 sm:space-y-6 sm:px-0">
-        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-16 left-0 h-52 w-52 rounded-full bg-cyan-500/10 blur-3xl sm:-top-20 sm:h-64 sm:w-64 md:h-72 md:w-72" />
-          <div className="absolute right-0 top-20 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
-          <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-sky-500/5 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
-        </div>
+      <>
+        <style>{`
+          @keyframes ap-spin { to { transform: rotate(360deg); } }
+          .ap-spin { animation: ap-spin 0.8s linear infinite; }
+        `}</style>
 
-        <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 p-4 shadow-[0_20px_70px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:rounded-3xl sm:p-6 md:p-8">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_30%)]" />
+        <div className="flex flex-col gap-4 font-sans">
+          {/* ── HEADER ── */}
+          <div className="relative overflow-hidden rounded-[8px] border border-[#1a2d46] bg-[#040c1a] px-[20px] py-[18px] md:px-[24px] md:py-[20px]">
+            <div
+              className="absolute left-0 right-0 top-0 h-px opacity-70"
+              style={{
+                background:
+                  "linear-gradient(90deg,transparent,#1e40af,#0ea5e9,transparent)",
+              }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.025]"
+              style={{
+                backgroundImage: "radial-gradient(#fff 1px, transparent 1px)",
+                backgroundSize: "24px 24px",
+              }}
+            />
 
-          <div className="relative flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3 min-w-0">
+            <div className="relative flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-lg font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
-                  Projects
-                </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400 md:text-base">
-                  Manage visibility, featured state, display order, and custom
-                  project details.
-                </p>
-              </div>
-            </div>
+                <div className="mb-[10px] font-mono text-[10px] tracking-[0.18em] text-[#3a5570]">
+                  ADMIN / PROJECTS
+                </div>
 
-            <div className="flex w-full lg:w-auto">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-[7px] border border-[#1d4ed850] bg-[#0c1e3a] shadow-[0_0_16px_#1d4ed825]">
+                    <FolderKanban size={17} color="#60a5fa" />
+                  </div>
+
+                  <div>
+                    <h1 className="m-0 text-[20px] font-bold leading-[1.2] text-[#e2e8f0]">
+                      Projects
+                    </h1>
+                    <p className="mt-[3px] text-[13px] text-[#4a6680]">
+                      Manage visibility, featured state, and custom project
+                      details
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <button
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[6px] border border-[#3b82f680] bg-[linear-gradient(135deg,#1e3a8a,#1d4ed8_55%,#0369a1)] px-[18px] py-[9px] text-[13px] font-semibold text-[#dbeafe] shadow-[0_0_24px_#1d4ed830,inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-150 hover:-translate-y-[1px] hover:shadow-[0_0_36px_#1d4ed850] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none md:px-[22px]"
                 onClick={doSync}
                 disabled={syncing}
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/20 bg-gradient-to-r from-cyan-400/90 to-blue-500/90 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 lg:w-auto"
               >
-                <RefreshCcw
-                  className={`h-4 w-4 transition-transform duration-500 ${
-                    syncing ? "animate-spin" : "group-hover:rotate-180"
-                  }`}
-                />
-                {syncing ? "Syncing..." : "Sync GitHub"}
+                <RefreshCcw size={14} className={syncing ? "ap-spin" : ""} />
+                {syncing ? "Syncing…" : "Sync GitHub"}
               </button>
             </div>
           </div>
-        </section>
 
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-400/20 hover:bg-white/[0.06] sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
-                  Total Projects
-                </p>
-                <h3 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
-                  {items.length}
-                </h3>
-              </div>
-              <div className="shrink-0 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-300">
-                <FolderKanban className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-
-          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/20 hover:bg-white/[0.06] sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
-                  Visible Public
-                </p>
-                <h3 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
-                  {visibleCount}
-                </h3>
-              </div>
-              <div className="shrink-0 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-emerald-300">
-                <Eye className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-
-          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-amber-400/20 hover:bg-white/[0.06] sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
-                  Featured
-                </p>
-                <h3 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
-                  {featuredCount}
-                </h3>
-              </div>
-              <div className="shrink-0 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-3 text-amber-300">
-                <Star className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-
-          <div className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-yellow-400/20 hover:bg-white/[0.06] sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 sm:text-xs">
-                  Hidden
-                </p>
-                <h3 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
-                  {hiddenCount}
-                </h3>
-              </div>
-              <div className="shrink-0 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-3 text-yellow-300">
-                <Layers3 className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {error && (
-          <div className="animate-in fade-in slide-in-from-top-1 rounded-2xl border border-red-900/40 bg-red-950/30 p-4 text-sm text-red-300">
-            {error}
-          </div>
-        )}
-
-        <section className="hidden overflow-hidden rounded-3xl border border-white/10 bg-slate-950/50 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl md:block">
-          <div className="border-b border-white/10 px-4 py-4 sm:px-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-base font-semibold text-white sm:text-lg">
-                  Project Records
-                </h2>
-                <p className="text-sm text-slate-400">
-                  Review and control all synced GitHub projects.
-                </p>
-              </div>
-
-              <div className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-300 sm:w-auto">
-                <ArrowUpDown className="h-3.5 w-3.5" />
-                Ordered by display priority
-              </div>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex min-h-[260px] items-center justify-center px-4 text-center">
-              <div className="flex items-center gap-3 text-slate-300">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
-                Loading projects...
-              </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-sm">
-                <thead className="bg-white/[0.03] text-left text-xs uppercase tracking-[0.15em] text-slate-400">
-                  <tr className="border-b border-white/10">
-                    <th className="p-4 font-medium">Project</th>
-                    <th className="p-4 font-medium">Featured</th>
-                    <th className="p-4 font-medium">Visibility</th>
-                    <th className="p-4 font-medium">Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody className="text-slate-200">
-                  {items.map((p) => (
-                    <tr
-                      key={p._id}
-                      className="group border-b border-white/5 transition-colors duration-300 hover:bg-white/[0.03]"
-                    >
-                      <td className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="relative h-16 w-24 overflow-hidden rounded-xl border border-white/10 bg-slate-900">
-                            <Image
-                              src={
-                                p.imageUrl ||
-                                "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80"
-                              }
-                              alt={p.customTitle || p.name}
-                              fill
-                              className="object-cover"
-                              sizes="96px"
-                            />
-                          </div>
-
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <div className="truncate font-semibold text-white">
-                                {p.customTitle || p.name}
-                              </div>
-                              {p.featured && (
-                                <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
-                                  Featured
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="mt-1 break-all text-xs text-slate-400">
-                              {p.fullName}
-                            </div>
-
-                            <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                              {p.type && (
-                                <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-blue-200">
-                                  {p.type}
-                                </span>
-                              )}
-                              {p.platform && (
-                                <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-1 text-violet-200">
-                                  {p.platform}
-                                </span>
-                              )}
-                              {p.liveUrl && (
-                                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-emerald-200">
-                                  Live URL
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="p-4">
-                        <button
-                          onClick={() => quickToggle(p._id, { featured: !p.featured })}
-                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 ${
-                            p.featured
-                              ? "border-cyan-500/30 bg-cyan-500/15 text-cyan-200 hover:bg-cyan-500/20"
-                              : "border-slate-800 bg-slate-900/50 text-slate-200 hover:bg-slate-800/70"
-                          }`}
-                        >
-                          <Star className="h-3.5 w-3.5" />
-                          {p.featured ? "Yes" : "No"}
-                        </button>
-                      </td>
-
-                      <td className="p-4">
-                        <button
-                          onClick={() => quickToggle(p._id, { isHidden: !p.isHidden })}
-                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 ${
-                            p.isHidden
-                              ? "border-yellow-500/30 bg-yellow-500/15 text-yellow-200 hover:bg-yellow-500/20"
-                              : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/15"
-                          }`}
-                        >
-                          <Monitor className="h-3.5 w-3.5" />
-                          {p.isHidden ? "Hidden" : "Visible"}
-                        </button>
-                      </td>
-
-                      <td className="p-4">
-                        <button
-                          onClick={() => setEditing({ ...p })}
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-400/30 hover:bg-slate-800/80"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {items.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="p-10 text-center">
-                        <div className="flex flex-col items-center justify-center gap-3 text-slate-400">
-                          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                            <FolderKanban className="h-6 w-6 text-slate-300" />
-                          </div>
-                          <p className="text-sm">No projects yet.</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/50 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl md:hidden">
-          <div className="border-b border-white/10 px-4 py-4">
-            <div className="flex flex-col gap-3">
-              <div>
-                <h2 className="text-base font-semibold text-white">
-                  Project Records
-                </h2>
-                <p className="text-sm text-slate-400">
-                  Review and control all synced GitHub projects.
-                </p>
-              </div>
-
-              <div className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-300">
-                <ArrowUpDown className="h-3.5 w-3.5" />
-                Ordered by display priority
-              </div>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex min-h-[260px] items-center justify-center px-4 text-center">
-              <div className="flex items-center gap-3 text-slate-300">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
-                Loading projects...
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3 p-3">
-              {items.map((p) => (
+          {/* ── STAT CARDS ── */}
+          <div className="grid gap-[10px] [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+            {[
+              {
+                label: "total_projects",
+                value: items.length,
+                icon: <FolderKanban size={15} />,
+                accent: "#38bdf8",
+                iconBg: "#0c1f30",
+                iconBorder: "#0ea5e940",
+              },
+              {
+                label: "visible_public",
+                value: visibleCount,
+                icon: <Eye size={15} />,
+                accent: "#4ade80",
+                iconBg: "#061510",
+                iconBorder: "#22c55e40",
+              },
+              {
+                label: "featured",
+                value: featuredCount,
+                icon: <Star size={15} />,
+                accent: "#fbbf24",
+                iconBg: "#141008",
+                iconBorder: "#f59e0b40",
+              },
+              {
+                label: "hidden",
+                value: hiddenCount,
+                icon: <EyeOff size={15} />,
+                accent: "#fb923c",
+                iconBg: "#140d05",
+                iconBorder: "#f9731640",
+              },
+            ].map(({ label, value, icon, accent, iconBg, iconBorder }) => (
+              <div
+                key={label}
+                className="relative overflow-hidden rounded-[7px] border border-[#1a2d46] bg-[#040c1a] px-[18px] py-[16px] transition-[border-color,box-shadow] duration-200 hover:border-[#2a4060] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+              >
                 <div
-                  key={p._id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-3"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-slate-900">
-                      <Image
-                        src={
-                          p.imageUrl ||
-                          "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80"
-                        }
-                        alt={p.customTitle || p.name}
-                        fill
-                        className="object-cover"
-                        sizes="96px"
-                      />
+                  className="absolute left-0 right-0 top-0 h-px"
+                  style={{
+                    background: `linear-gradient(90deg,transparent,${accent}70,transparent)`,
+                  }}
+                />
+
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="mb-[12px] font-mono text-[10px] tracking-[0.14em] text-[#3a5570]">
+                      {label}
                     </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="min-w-0 truncate font-semibold text-white">
-                          {p.customTitle || p.name}
-                        </div>
-                        {p.featured && (
-                          <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
-                            Featured
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mt-1 break-all text-xs text-slate-400">
-                        {p.fullName}
-                      </div>
-
-                      <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                        {p.type && (
-                          <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-blue-200">
-                            {p.type}
-                          </span>
-                        )}
-                        {p.platform && (
-                          <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-1 text-violet-200">
-                            {p.platform}
-                          </span>
-                        )}
-                        {p.liveUrl && (
-                          <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-emerald-200">
-                            Live URL
-                          </span>
-                        )}
-                      </div>
+                    <div className="font-mono text-[28px] font-semibold leading-[1] text-[#e2e8f0]">
+                      {value}
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-1 gap-2">
-                    <button
-                      onClick={() => quickToggle(p._id, { featured: !p.featured })}
-                      className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all duration-300 ${
-                        p.featured
-                          ? "border-cyan-500/30 bg-cyan-500/15 text-cyan-200 hover:bg-cyan-500/20"
-                          : "border-slate-800 bg-slate-900/50 text-slate-200 hover:bg-slate-800/70"
-                      }`}
-                    >
-                      <Star className="h-3.5 w-3.5" />
-                      {p.featured ? "Yes" : "No"}
-                    </button>
-
-                    <button
-                      onClick={() => quickToggle(p._id, { isHidden: !p.isHidden })}
-                      className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all duration-300 ${
-                        p.isHidden
-                          ? "border-yellow-500/30 bg-yellow-500/15 text-yellow-200 hover:bg-yellow-500/20"
-                          : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/15"
-                      }`}
-                    >
-                      <Monitor className="h-3.5 w-3.5" />
-                      {p.isHidden ? "Hidden" : "Visible"}
-                    </button>
-
-                    <button
-                      onClick={() => setEditing({ ...p })}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-xs font-semibold text-white transition-all duration-300 hover:border-cyan-400/30 hover:bg-slate-800/80"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </button>
+                  <div
+                    className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[6px]"
+                    style={{
+                      background: iconBg,
+                      border: `1px solid ${iconBorder}`,
+                      color: accent,
+                    }}
+                  >
+                    {icon}
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
 
-              {items.length === 0 && (
-                <div className="p-10 text-center">
-                  <div className="flex flex-col items-center justify-center gap-3 text-slate-400">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                      <FolderKanban className="h-6 w-6 text-slate-300" />
-                    </div>
-                    <p className="text-sm">No projects yet.</p>
-                  </div>
-                </div>
-              )}
+          {/* ── ERROR ── */}
+          {error && (
+            <div className="flex items-center gap-[10px] rounded-[6px] border border-[#7f1d1d60] bg-[#1a0808] px-[16px] py-[11px]">
+              <AlertTriangle size={15} color="#f87171" className="shrink-0" />
+              <span className="text-[13px] text-[#fca5a5]">{error}</span>
             </div>
           )}
-        </section>
 
-        <ProjectUpdate
-          editing={editing}
-          setEditing={setEditing}
-          saveEdit={saveEdit}
-          saving={saving}
-          handleImageUpload={handleImageUpload}
-          handleImageRemove={handleImageRemove}
-        />
-      </div>
+          {/* ── DESKTOP TABLE ── */}
+          <div className="hidden overflow-hidden rounded-[8px] border border-[#1a2d46] bg-[#040c1a] md:block">
+            <div className="flex items-center justify-between gap-3 border-b border-[#0e1a2e] bg-[#050d1c] px-[20px] py-[14px]">
+              <div>
+                <div className="mb-1 font-mono text-[10px] tracking-[0.16em] text-[#3a5570]">
+                  RECORDS
+                </div>
+                <h2 className="m-0 text-[15px] font-semibold text-[#94a3b8]">
+                  Project Records
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-[7px] rounded-[5px] border border-[#1a2d46] bg-[#07111f] px-[12px] py-[5px]">
+                <ArrowUpDown size={11} color="#3a5570" />
+                <span className="font-mono text-[10px] tracking-[0.1em] text-[#3a5570]">
+                  ORDERED BY PRIORITY
+                </span>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="flex min-h-[240px] items-center justify-center gap-3">
+                <div className="ap-spin h-[18px] w-[18px] rounded-full border-[2px] border-[#1d4ed8] border-t-transparent" />
+                <span className="font-mono text-[12px] tracking-[0.1em] text-[#3a5570]">
+                  LOADING PROJECTS…
+                </span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-[2px] [&::-webkit-scrollbar-thumb]:bg-[#1a2d46] [&::-webkit-scrollbar-track]:bg-transparent">
+                <table className="w-full min-w-[740px] border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#0e1a2e] bg-[#050d1c]">
+                      {["Project", "Featured", "Visibility", "Actions"].map((h) => (
+                        <th key={h} className="px-[18px] py-[10px] text-left">
+                          <span className="font-mono text-[10px] font-semibold tracking-[0.16em] text-[#3a5570]">
+                            {h.toUpperCase()}
+                          </span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {items.map((p) => (
+                      <tr
+                        key={p._id}
+                        className="border-b border-[#090f1c] transition-colors duration-[120ms] hover:bg-[#060f1e]"
+                      >
+                        <td className="px-[18px] py-[13px]">
+                          <div className="flex items-center gap-[13px]">
+                            <div className="relative h-[56px] w-[84px] shrink-0 overflow-hidden rounded-[6px] border border-[#1a2d46] bg-[#06101f]">
+                              <Image
+                                src={p.imageUrl || DEFAULT_IMG}
+                                alt={p.customTitle || p.name}
+                                fill
+                                style={{ objectFit: "cover" }}
+                                sizes="84px"
+                              />
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-semibold text-[#cbd5e1]">
+                                  {p.customTitle || p.name}
+                                </span>
+
+                                {p.featured && (
+                                  <span className="rounded-[3px] border border-[#92400e60] bg-[#140f03] px-[8px] py-[2px] font-mono text-[10px] font-semibold leading-[1.7] tracking-[0.08em] text-[#fbbf24]">
+                                    FEATURED
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="mt-1 break-all font-mono text-[11px] text-[#3a5570]">
+                                {p.fullName}
+                              </div>
+
+                              <div className="mt-[7px] flex flex-wrap gap-[5px]">
+                                {p.type && (
+                                  <span className="rounded-[3px] border border-[#1d4ed850] bg-[#0c1e38] px-[9px] py-[2px] font-mono text-[10px] font-medium leading-[1.6] tracking-[0.04em] text-[#7cb9f8]">
+                                    {p.type}
+                                  </span>
+                                )}
+                                {p.platform && (
+                                  <span className="rounded-[3px] border border-[#7c3aed50] bg-[#140f2a] px-[9px] py-[2px] font-mono text-[10px] font-medium leading-[1.6] tracking-[0.04em] text-[#b49ef8]">
+                                    {p.platform}
+                                  </span>
+                                )}
+                                {p.liveUrl && (
+                                  <span className="rounded-[3px] border border-[#15803d50] bg-[#071510] px-[9px] py-[2px] font-mono text-[10px] font-medium leading-[1.6] tracking-[0.04em] text-[#5de88a]">
+                                    live
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-[18px] py-[13px]">
+                          <button
+                            className={`inline-flex items-center gap-[7px] whitespace-nowrap rounded-[5px] border px-[13px] py-[6px] text-[12px] font-medium leading-[1.4] transition-all duration-150 ${
+                              p.featured
+                                ? "border-[#92400e70] bg-[#140f03] text-[#fbbf24]"
+                                : "border-[#1a2d46] bg-[#07111f] text-[#5a7090] hover:border-[#2a4060] hover:text-[#7a90b0]"
+                            }`}
+                            onClick={() =>
+                              quickToggle(p._id, { featured: !p.featured })
+                            }
+                          >
+                            <Star size={12} />
+                            {p.featured ? "Yes" : "No"}
+                          </button>
+                        </td>
+
+                        <td className="px-[18px] py-[13px]">
+                          <button
+                            className={`inline-flex items-center gap-[7px] whitespace-nowrap rounded-[5px] border px-[13px] py-[6px] text-[12px] font-medium leading-[1.4] transition-all duration-150 ${
+                              p.isHidden
+                                ? "border-[#78350f70] bg-[#130e07] text-[#fb923c]"
+                                : "border-[#14532d70] bg-[#071510] text-[#4ade80]"
+                            }`}
+                            onClick={() =>
+                              quickToggle(p._id, { isHidden: !p.isHidden })
+                            }
+                          >
+                            {p.isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                            {p.isHidden ? "Hidden" : "Visible"}
+                          </button>
+                        </td>
+
+                        <td className="px-[18px] py-[13px]">
+                          <button
+                            className="inline-flex items-center gap-[7px] rounded-[5px] border border-[#1a2d46] bg-[#07111f] px-[13px] py-[6px] text-[12px] font-medium leading-[1.4] text-[#5a7090] transition-all duration-150 hover:border-[#1d4ed880] hover:bg-[#0a1628] hover:text-[#93c5fd]"
+                            onClick={() => setEditing({ ...p })}
+                          >
+                            <Pencil size={12} />
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {items.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-[18px] py-[56px] text-center">
+                          <div className="flex flex-col items-center gap-[14px]">
+                            <div className="flex h-[44px] w-[44px] items-center justify-center rounded-[8px] border border-[#1a2d46] bg-[#07111f]">
+                              <FolderKanban size={20} color="#3a5570" />
+                            </div>
+                            <span className="font-mono text-[11px] tracking-[0.12em] text-[#3a5570]">
+                              NO PROJECTS FOUND
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* ── MOBILE CARDS ── */}
+          <div className="flex flex-col gap-[10px] md:hidden">
+            <div className="flex items-center justify-between gap-[10px] overflow-visible rounded-[8px] border border-[#1a2d46] bg-[#040c1a] px-[16px] py-[13px]">
+              <div>
+                <div className="mb-1 font-mono text-[10px] tracking-[0.16em] text-[#3a5570]">
+                  RECORDS
+                </div>
+                <h2 className="m-0 text-[14px] font-semibold text-[#94a3b8]">
+                  Project Records
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-[6px] rounded-[5px] border border-[#1a2d46] bg-[#07111f] px-[10px] py-[5px]">
+                <ArrowUpDown size={11} color="#3a5570" />
+                <span className="font-mono text-[10px] tracking-[0.1em] text-[#3a5570]">
+                  PRIORITY
+                </span>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="flex min-h-[160px] items-center justify-center gap-3 overflow-hidden rounded-[8px] border border-[#1a2d46] bg-[#040c1a]">
+                <div className="ap-spin h-[16px] w-[16px] rounded-full border-[2px] border-[#1d4ed8] border-t-transparent" />
+                <span className="font-mono text-[11px] tracking-[0.1em] text-[#3a5570]">
+                  LOADING…
+                </span>
+              </div>
+            ) : (
+              <>
+                {items.map((p) => (
+                  <div
+                    key={p._id}
+                    className="rounded-[7px] border border-[#1a2d46] bg-[#050d1c] p-[14px] transition-colors duration-150 hover:border-[#2a4060]"
+                  >
+                    <div className="flex gap-[13px]">
+                      <div className="relative h-[54px] w-[76px] shrink-0 overflow-hidden rounded-[6px] border border-[#1a2d46] bg-[#06101f]">
+                        <Image
+                          src={p.imageUrl || DEFAULT_IMG}
+                          alt={p.customTitle || p.name}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          sizes="76px"
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-[7px]">
+                          <span className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-semibold text-[#cbd5e1]">
+                            {p.customTitle || p.name}
+                          </span>
+
+                          {p.featured && (
+                            <span className="rounded-[3px] border border-[#92400e60] bg-[#140f03] px-[8px] py-[2px] font-mono text-[10px] font-semibold leading-[1.7] tracking-[0.08em] text-[#fbbf24]">
+                              FEATURED
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-1 break-all font-mono text-[10px] text-[#3a5570]">
+                          {p.fullName}
+                        </div>
+
+                        <div className="mt-[6px] flex flex-wrap gap-[5px]">
+                          {p.type && (
+                            <span className="rounded-[3px] border border-[#1d4ed850] bg-[#0c1e38] px-[9px] py-[2px] font-mono text-[10px] font-medium leading-[1.6] tracking-[0.04em] text-[#7cb9f8]">
+                              {p.type}
+                            </span>
+                          )}
+                          {p.platform && (
+                            <span className="rounded-[3px] border border-[#7c3aed50] bg-[#140f2a] px-[9px] py-[2px] font-mono text-[10px] font-medium leading-[1.6] tracking-[0.04em] text-[#b49ef8]">
+                              {p.platform}
+                            </span>
+                          )}
+                          {p.liveUrl && (
+                            <span className="rounded-[3px] border border-[#15803d50] bg-[#071510] px-[9px] py-[2px] font-mono text-[10px] font-medium leading-[1.6] tracking-[0.04em] text-[#5de88a]">
+                              live
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-[12px] grid grid-cols-3 gap-[7px]">
+                      <button
+                        className={`inline-flex w-full items-center justify-center gap-[7px] whitespace-nowrap rounded-[5px] border px-[13px] py-[6px] text-[12px] font-medium leading-[1.4] transition-all duration-150 ${
+                          p.featured
+                            ? "border-[#92400e70] bg-[#140f03] text-[#fbbf24]"
+                            : "border-[#1a2d46] bg-[#07111f] text-[#5a7090] hover:border-[#2a4060] hover:text-[#7a90b0]"
+                        }`}
+                        onClick={() =>
+                          quickToggle(p._id, { featured: !p.featured })
+                        }
+                      >
+                        <Star size={12} />
+                        {p.featured ? "Featured" : "Feature"}
+                      </button>
+
+                      <button
+                        className={`inline-flex w-full items-center justify-center gap-[7px] whitespace-nowrap rounded-[5px] border px-[13px] py-[6px] text-[12px] font-medium leading-[1.4] transition-all duration-150 ${
+                          p.isHidden
+                            ? "border-[#78350f70] bg-[#130e07] text-[#fb923c]"
+                            : "border-[#14532d70] bg-[#071510] text-[#4ade80]"
+                        }`}
+                        onClick={() =>
+                          quickToggle(p._id, { isHidden: !p.isHidden })
+                        }
+                      >
+                        {p.isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                        {p.isHidden ? "Hidden" : "Visible"}
+                      </button>
+
+                      <button
+                        className="inline-flex w-full items-center justify-center gap-[7px] rounded-[5px] border border-[#1a2d46] bg-[#07111f] px-[13px] py-[6px] text-[12px] font-medium leading-[1.4] text-[#5a7090] transition-all duration-150 hover:border-[#1d4ed880] hover:bg-[#0a1628] hover:text-[#93c5fd]"
+                        onClick={() => setEditing({ ...p })}
+                      >
+                        <Pencil size={12} />
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {items.length === 0 && (
+                  <div className="overflow-visible rounded-[8px] border border-[#1a2d46] bg-[#040c1a] px-[16px] py-[44px] text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="flex h-[40px] w-[40px] items-center justify-center rounded-[7px] border border-[#1a2d46] bg-[#07111f]">
+                        <FolderKanban size={18} color="#3a5570" />
+                      </div>
+                      <span className="font-mono text-[11px] tracking-[0.12em] text-[#3a5570]">
+                        NO PROJECTS FOUND
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* ── MODAL ── */}
+          <ProjectUpdate
+            editing={editing}
+            setEditing={setEditing}
+            saveEdit={saveEdit}
+            saving={saving}
+            handleImageUpload={handleImageUpload}
+            handleImageRemove={handleImageRemove}
+          />
+        </div>
+      </>
     </RequireAuth>
   );
 }

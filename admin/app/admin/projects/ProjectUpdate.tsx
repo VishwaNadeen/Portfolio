@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { X } from "lucide-react";
+import {
+  X,
+  ChevronDown,
+  Check,
+  Upload,
+  Trash2,
+  Save,
+  AlertCircle,
+} from "lucide-react";
 import type { AdminGitHubProject } from "../lib/adminApi";
 
 type ProjectUpdateProps = {
@@ -20,6 +28,13 @@ const DEFAULT_PROJECT_IMAGE =
 
 const PLATFORM_OPTIONS = ["", "Android App", "iOS App", "Web App", "Mobile App"];
 
+const PLATFORM_META: Record<string, { icon: string; color: string }> = {
+  "Android App": { icon: "🤖", color: "#3DDC84" },
+  "iOS App": { icon: "🍎", color: "#A8B8C8" },
+  "Web App": { icon: "🌐", color: "#38BDF8" },
+  "Mobile App": { icon: "📱", color: "#C084FC" },
+};
+
 export default function ProjectUpdate({
   editing,
   setEditing,
@@ -31,15 +46,17 @@ export default function ProjectUpdate({
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [pendingRemoveImage, setPendingRemoveImage] = useState(false);
-  const [imageAction, setImageAction] = useState<"idle" | "uploading" | "deleting">(
-    "idle"
-  );
+  const [imageAction, setImageAction] = useState<"idle" | "uploading" | "deleting">("idle");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSelectedImageFile(null);
     setPreviewUrl("");
     setPendingRemoveImage(false);
     setImageAction("idle");
+    setDropdownOpen(false);
   }, [editing?._id]);
 
   useEffect(() => {
@@ -47,6 +64,17 @@ export default function ProjectUpdate({
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [dropdownOpen]);
 
   const displayImageSrc = useMemo(() => {
     if (pendingRemoveImage && !previewUrl) return DEFAULT_PROJECT_IMAGE;
@@ -59,28 +87,21 @@ export default function ProjectUpdate({
   const isUploading = imageAction === "uploading";
   const isDeleting = imageAction === "deleting";
   const isImageProcessing = isUploading || isDeleting;
+  const currentPlatform = editing.platform || "";
+  const currentMeta = PLATFORM_META[currentPlatform];
 
   const handleUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    const nextPreviewUrl = URL.createObjectURL(file);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setSelectedImageFile(file);
-    setPreviewUrl(nextPreviewUrl);
+    setPreviewUrl(URL.createObjectURL(file));
     setPendingRemoveImage(false);
-
     e.target.value = "";
   };
 
   const handleRemoveClick = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setSelectedImageFile(null);
     setPreviewUrl("");
     setPendingRemoveImage(true);
@@ -88,9 +109,7 @@ export default function ProjectUpdate({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!editing?._id) return;
-
     try {
       if (selectedImageFile) {
         setImageAction("uploading");
@@ -101,12 +120,9 @@ export default function ProjectUpdate({
         await handleImageRemove(editing._id);
         setImageAction("idle");
       }
-
       await saveEdit(e);
-
       setSelectedImageFile(null);
       setPendingRemoveImage(false);
-
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl("");
@@ -118,179 +134,407 @@ export default function ProjectUpdate({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm">
-      <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
+    <>
+      <style>{`
+        @keyframes pu-in {
+          from { opacity: 0; transform: scale(0.98) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes pu-dd {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pu-bar {
+          0%   { transform: translateX(-120%); }
+          100% { transform: translateX(320%); }
+        }
+      `}</style>
+
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(1,4,12,0.92)] p-4 font-sans backdrop-blur-[8px]">
         <form
           onSubmit={handleSubmit}
-          className="flex max-h-[calc(100vh-24px)] w-full max-w-[600px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#020b2a] shadow-[0_25px_80px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-32px)] sm:rounded-3xl"
+          className="flex w-full max-w-[600px] flex-col overflow-hidden rounded-[9px] border border-[#1a2d46] bg-[#040c1a] shadow-[0_0_0_1px_#060e1c,0_40px_100px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.03)]"
+          style={{
+            maxHeight: "calc(100vh - 40px)",
+            animation: "pu-in 0.2s cubic-bezier(0.16,1,0.3,1)",
+          }}
         >
-          <div className="border-b border-white/10 bg-white/[0.02] px-4 py-4 sm:px-6 sm:py-5">
-            <div className="flex items-start justify-between gap-3 sm:gap-4">
-              <div className="min-w-0">
-                <h2 className="truncate text-base font-semibold text-white sm:text-lg">
-                  {editing.customTitle || editing.name}
-                </h2>
-                <p className="mt-1 break-all text-xs text-slate-400 sm:text-sm">
-                  {editing?.fullName || ""}
-                </p>
-              </div>
+          <div
+            className="h-px shrink-0 opacity-70"
+            style={{
+              background:
+                "linear-gradient(90deg,transparent 0%,#1e40af 30%,#0ea5e9 70%,transparent 100%)",
+            }}
+          />
 
-              <button
-                type="button"
-                onClick={() => setEditing(null)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800/80 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-            <label className="block text-xs text-slate-400">
-              Custom Title
-              <input
-                className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-white outline-none focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/10"
-                value={editing.customTitle || ""}
-                onChange={(e) =>
-                  setEditing((prev) =>
-                    prev ? { ...prev, customTitle: e.target.value } : prev
-                  )
-                }
-              />
-            </label>
-
-            <label className="block text-xs text-slate-400">
-              Platform
-              <select
-                className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-white outline-none focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/10"
-                value={editing.platform || ""}
-                onChange={(e) =>
-                  setEditing((prev) =>
-                    prev ? { ...prev, platform: e.target.value } : prev
-                  )
-                }
-              >
-                <option value="">Select platform</option>
-                {PLATFORM_OPTIONS.filter(Boolean).map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block text-xs text-slate-400">
-              <div className="flex items-center justify-between gap-3">
-                <span>Custom Description</span>
-                <span className="shrink-0 text-[11px] text-slate-500">
-                  {(editing.customDescription || "").length}/{DESCRIPTION_LIMIT}
-                </span>
-              </div>
-
-              <textarea
-                className="mt-2 min-h-[110px] w-full rounded-2xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-white outline-none focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/10"
-                rows={4}
-                maxLength={DESCRIPTION_LIMIT}
-                value={editing.customDescription || ""}
-                onChange={(e) =>
-                  setEditing((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          customDescription: e.target.value.slice(
-                            0,
-                            DESCRIPTION_LIMIT
-                          ),
-                        }
-                      : prev
-                  )
-                }
-              />
-            </label>
-
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-slate-200">
-                Project Image
-              </label>
-
-              <div className="relative h-40 w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-900 sm:h-44">
-                <Image
-                  src={displayImageSrc}
-                  alt={editing.customTitle || editing.name}
-                  fill
-                  className={`object-cover transition-opacity duration-300 ${
-                    isImageProcessing ? "opacity-40" : "opacity-100"
-                  }`}
+          <div className="flex shrink-0 items-center gap-3 border-b border-[#0e1a2e] bg-[#050d1c] px-4 py-[13px] sm:px-5">
+            <div className="flex shrink-0 gap-[6px]">
+              {["#2a1010", "#1f1a09", "#0a1f0e"].map((bg, i) => (
+                <span
+                  key={i}
+                  className="block h-[10px] w-[10px] rounded-full"
+                  style={{
+                    background: bg,
+                    border: `1px solid ${["#3f1515", "#3a300d", "#133a1a"][i]}`,
+                  }}
                 />
-
-                {isImageProcessing && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-                    <div className="w-[80%] max-w-sm">
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-700/80">
-                        <div className="h-full w-1/2 animate-[uploadingBar_1.2s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" />
-                      </div>
-                      <p className="mt-3 text-center text-xs font-medium text-slate-200">
-                        {isUploading ? "Uploading image..." : "Deleting image..."}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <input
-                  type="file"
-                  accept="image/*"
-                  disabled={saving || isImageProcessing}
-                  onChange={handleUploadChange}
-                  className="block w-full text-sm text-slate-300 file:mr-3 file:mb-2 file:rounded-xl file:border-0 file:bg-cyan-500/20 file:px-4 file:py-2 file:text-sm file:font-medium file:text-cyan-200 hover:file:bg-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-60 sm:file:mb-0 sm:file:mr-4"
-                />
-
-                <button
-                  type="button"
-                  onClick={handleRemoveClick}
-                  disabled={saving || isImageProcessing}
-                  className="w-full rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-300 hover:bg-red-500/20 disabled:opacity-60 sm:w-auto sm:shrink-0"
-                >
-                  Remove
-                </button>
-              </div>
-
-              <p className="text-xs text-slate-400">
-                Image is saved only after clicking Save Changes.
-              </p>
+              ))}
             </div>
-          </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-white/10 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
+            <div className="h-[14px] w-px shrink-0 bg-[#1a2d46]" />
+
+            <div className="font-mono text-[11px] whitespace-nowrap text-[#3a5570] shrink-0">
+              admin / projects /
+            </div>
+            <div className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[11px] text-[#4a6680]">
+              {editing.fullName || editing.name}
+            </div>
+
+            <span className="shrink-0 rounded-[3px] border border-[#1e3a6a] bg-[#0c2044] px-[9px] py-[3px] font-mono text-[10px] font-semibold leading-[1.7] tracking-[0.1em] text-[#60a5fa]">
+              EDIT MODE
+            </span>
+
             <button
               type="button"
               onClick={() => setEditing(null)}
-              className="w-full rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800/70 sm:w-auto"
+              className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[4px] border border-[#1a2d46] bg-transparent text-[#3a5570] transition-all duration-150 hover:border-[#4a1010] hover:bg-[#1a0808] hover:text-[#ef4444]"
             >
-              Cancel
-            </button>
-
-            <button
-              disabled={saving || isImageProcessing}
-              className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-500/20 disabled:opacity-60 sm:w-auto"
-            >
-              {saving || isImageProcessing ? "Saving..." : "Save Changes"}
+              <X size={13} />
             </button>
           </div>
 
-          <style jsx>{`
-            @keyframes uploadingBar {
-              0% {
-                transform: translateX(-120%);
-              }
-              100% {
-                transform: translateX(320%);
-              }
-            }
-          `}</style>
+          <div className="flex shrink-0 items-center gap-[10px] border-b border-[#0b1524] bg-[#040c1a] px-4 py-[10px] sm:px-5">
+            <div
+              className="h-[7px] w-[7px] shrink-0 rounded-full"
+              style={{
+                background: "linear-gradient(135deg,#1d4ed8,#0ea5e9)",
+                boxShadow: "0 0 8px #1d4ed870",
+              }}
+            />
+            <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-semibold text-[#94a3b8]">
+              {editing.customTitle || editing.name}
+            </span>
+            <span className="shrink-0 font-mono text-[10px] tracking-[0.08em] text-[#2a4060]">
+              #{(editing._id ?? "").toUpperCase().slice(-6)}
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+            <div className="flex flex-col gap-6">
+              <div>
+                <div className="mb-4 flex items-center gap-[10px] font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#3a5570] before:h-px before:flex-1 before:bg-[#1a2d46] after:h-px after:flex-1 after:bg-[#1a2d46]">
+                  Metadata
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <span className="mb-[7px] block font-mono text-[11px] font-medium tracking-[0.06em] text-[#4a6680]">
+                      custom_title
+                    </span>
+                    <input
+                      className="w-full rounded-[6px] border border-[#1a2d46] bg-[#060f1e] px-[14px] py-[10px] text-[14px] leading-[1.55] text-[#cbd5e1] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-[#2a4060] focus:border-[#2563eb70] focus:shadow-[0_0_0_3px_#1e40af1a]"
+                      value={editing.customTitle || ""}
+                      placeholder="Leave blank to use repo name"
+                      onChange={(e) =>
+                        setEditing((prev) =>
+                          prev ? { ...prev, customTitle: e.target.value } : prev
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <span className="mb-[7px] block font-mono text-[11px] font-medium tracking-[0.06em] text-[#4a6680]">
+                      platform
+                    </span>
+                    <div ref={dropdownRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setDropdownOpen((o) => !o)}
+                        className={`flex w-full items-center justify-between rounded-[6px] border bg-[#060f1e] px-[14px] py-[10px] text-[14px] transition-all duration-150 ${
+                          dropdownOpen
+                            ? "border-[#2563eb70] shadow-[0_0_0_3px_#1e40af1a]"
+                            : "border-[#1a2d46]"
+                        }`}
+                      >
+                        <span className="flex items-center gap-[10px]">
+                          {currentMeta ? (
+                            <>
+                              <span
+                                className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[5px] border text-[13px]"
+                                style={{
+                                  background: `${currentMeta.color}18`,
+                                  borderColor: `${currentMeta.color}30`,
+                                }}
+                              >
+                                {currentMeta.icon}
+                              </span>
+                              <span
+                                className="font-medium"
+                                style={{ color: currentMeta.color }}
+                              >
+                                {currentPlatform}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-[#2a4060]">— unset —</span>
+                          )}
+                        </span>
+                        <ChevronDown
+                          size={14}
+                          className={`text-[#4a6680] transition-transform duration-150 ${
+                            dropdownOpen ? "rotate-180" : "rotate-0"
+                          }`}
+                        />
+                      </button>
+
+                      {dropdownOpen && (
+                        <div
+                          className="absolute left-0 right-0 top-[calc(100%+5px)] z-40 overflow-hidden rounded-[6px] border border-[#1a2d46] bg-[#060f1e] shadow-[0_16px_48px_rgba(0,0,0,0.7)]"
+                          style={{ animation: "pu-dd 0.12s ease" }}
+                        >
+                          <button
+                            type="button"
+                            className={`flex w-full items-center gap-[11px] px-[14px] py-[9px] text-left text-[13px] transition-colors duration-100 ${
+                              !currentPlatform
+                                ? "bg-[#0a1628] text-[#64748b]"
+                                : "text-[#3a5570] hover:bg-[#0a1628]"
+                            }`}
+                            onClick={() => {
+                              setEditing((p) => (p ? { ...p, platform: "" } : p));
+                              setDropdownOpen(false);
+                            }}
+                          >
+                            <span className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[5px] border border-[#1a2d46] bg-[#1a2d4640] text-[11px] text-[#3a5570]">
+                              —
+                            </span>
+                            <span>None</span>
+                            {!currentPlatform && (
+                              <Check size={12} className="ml-auto text-[#4a6680]" />
+                            )}
+                          </button>
+
+                          <div className="mx-[14px] h-px bg-[#0e1a2e]" />
+
+                          {PLATFORM_OPTIONS.filter(Boolean).map((option) => {
+                            const meta = PLATFORM_META[option];
+                            const isSel = currentPlatform === option;
+
+                            return (
+                              <button
+                                key={option}
+                                type="button"
+                                className={`flex w-full items-center gap-[11px] px-[14px] py-[9px] text-left text-[13px] transition-colors duration-100 ${
+                                  isSel
+                                    ? "font-medium"
+                                    : "text-[#94a3b8] hover:bg-[#0a1628]"
+                                }`}
+                                style={{
+                                  background: isSel ? `${meta.color}0c` : "transparent",
+                                  color: isSel ? meta.color : undefined,
+                                }}
+                                onClick={() => {
+                                  setEditing((p) =>
+                                    p ? { ...p, platform: option } : p
+                                  );
+                                  setDropdownOpen(false);
+                                }}
+                              >
+                                <span
+                                  className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[5px] border text-[14px]"
+                                  style={{
+                                    background: `${meta.color}18`,
+                                    borderColor: `${meta.color}30`,
+                                  }}
+                                >
+                                  {meta.icon}
+                                </span>
+                                <span>{option}</span>
+                                {isSel && (
+                                  <Check
+                                    size={12}
+                                    className="ml-auto"
+                                    style={{ color: meta.color }}
+                                  />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-[7px] flex items-center justify-between">
+                      <span className="font-mono text-[11px] font-medium tracking-[0.06em] text-[#4a6680]">
+                        custom_description
+                      </span>
+                      <span
+                        className={`font-mono text-[11px] ${
+                          (editing.customDescription || "").length >= DESCRIPTION_LIMIT
+                            ? "text-[#ef4444]"
+                            : "text-[#3a5570]"
+                        }`}
+                      >
+                        {(editing.customDescription || "").length}/{DESCRIPTION_LIMIT}
+                      </span>
+                    </div>
+                    <textarea
+                      className="min-h-[96px] w-full resize-none rounded-[6px] border border-[#1a2d46] bg-[#060f1e] px-[14px] py-[10px] text-[14px] leading-[1.6] text-[#cbd5e1] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-[#2a4060] focus:border-[#2563eb70] focus:shadow-[0_0_0_3px_#1e40af1a]"
+                      rows={4}
+                      maxLength={DESCRIPTION_LIMIT}
+                      placeholder="Short project summary…"
+                      value={editing.customDescription || ""}
+                      onChange={(e) =>
+                        setEditing((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                customDescription: e.target.value.slice(
+                                  0,
+                                  DESCRIPTION_LIMIT
+                                ),
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-4 flex items-center gap-[10px] font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#3a5570] before:h-px before:flex-1 before:bg-[#1a2d46] after:h-px after:flex-1 after:bg-[#1a2d46]">
+                  Project Image
+                </div>
+
+                <div className="relative h-[158px] overflow-hidden rounded-[7px] border border-[#1a2d46] bg-[#06101f]">
+                  <Image
+                    src={displayImageSrc}
+                    alt={editing.customTitle || editing.name}
+                    fill
+                    style={{
+                      objectFit: "cover",
+                      opacity: isImageProcessing ? 0.25 : 1,
+                      transition: "opacity 0.3s",
+                    }}
+                  />
+
+                  {!isImageProcessing && (
+                    <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(4,12,26,0.65)_0%,transparent_55%)]" />
+                  )}
+
+                  {isImageProcessing && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                      <div className="h-[2px] w-[144px] overflow-hidden rounded-[2px] bg-[#1a2d46]">
+                        <div
+                          className="h-full w-1/2 rounded-[2px]"
+                          style={{
+                            background: "linear-gradient(90deg, #1d4ed8, #0ea5e9)",
+                            animation: "pu-bar 1.2s ease-in-out infinite",
+                          }}
+                        />
+                      </div>
+                      <span className="font-mono text-[11px] text-[#4a6680]">
+                        {isUploading ? "uploading…" : "removing…"}
+                      </span>
+                    </div>
+                  )}
+
+                  {selectedImageFile && !isImageProcessing && (
+                    <span className="absolute bottom-[9px] left-[9px] rounded-[3px] border border-[#0a3a20] bg-[#052010] px-[9px] py-[3px] font-mono text-[10px] font-semibold leading-[1.6] tracking-[0.08em] text-[#4ade80]">
+                      STAGED
+                    </span>
+                  )}
+
+                  {pendingRemoveImage && !isImageProcessing && (
+                    <span className="absolute bottom-[9px] left-[9px] rounded-[3px] border border-[#3a1010] bg-[#1a0808] px-[9px] py-[3px] font-mono text-[10px] font-semibold leading-[1.6] tracking-[0.08em] text-[#f87171]">
+                      MARKED FOR REMOVAL
+                    </span>
+                  )}
+
+                  <div
+                    className="absolute right-0 top-0 h-[44px] w-[44px] opacity-[0.35]"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle, #1a2d46 1px, transparent 1px)",
+                      backgroundSize: "8px 8px",
+                    }}
+                  />
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-[9px]">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={saving || isImageProcessing}
+                    onChange={handleUploadChange}
+                    className="hidden"
+                  />
+
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-[7px] rounded-[6px] border border-[#1a2d46] bg-[#07111f] px-[15px] py-[8px] text-[13px] font-medium leading-[1.4] text-[#5a7090] transition-all duration-150 hover:border-[#1e40af70] hover:bg-[#0a1628] hover:text-[#93c5fd] disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={saving || isImageProcessing}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload size={13} />
+                    {selectedImageFile ? "Replace" : "Upload"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-[7px] rounded-[6px] border border-[#1a2d46] bg-[#07111f] px-[15px] py-[8px] text-[13px] font-medium leading-[1.4] text-[#5a7090] transition-all duration-150 hover:border-[#7f1d1d70] hover:bg-[#0f0808] hover:text-[#fca5a5] disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={saving || isImageProcessing}
+                    onClick={handleRemoveClick}
+                  >
+                    <Trash2 size={13} />
+                    Remove
+                  </button>
+
+                  <div className="ml-auto flex items-center gap-[6px]">
+                    <AlertCircle size={12} className="shrink-0 text-[#3a5570]" />
+                    <span className="font-mono text-[10px] tracking-[0.07em] text-[#3a5570]">
+                      COMMITTED ON SAVE
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[#0b1524] bg-[#050d1c] px-4 py-[13px] sm:px-5">
+            <span className="font-mono text-[10px] tracking-[0.1em] text-[#1a2d46]">
+              PROJECT · {(editing._id ?? "").toUpperCase().slice(-8)}
+            </span>
+
+            <div className="flex items-center gap-[9px]">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="rounded-[6px] border border-[#1a2d46] bg-transparent px-[18px] py-[8px] text-[13px] font-medium text-[#4a6680] transition-all duration-150 hover:border-[#2a4060] hover:text-[#64748b]"
+              >
+                Discard
+              </button>
+
+              <button
+                type="submit"
+                disabled={saving || isImageProcessing}
+                className={`flex items-center gap-2 rounded-[6px] border px-[20px] py-[8px] text-[13px] font-semibold transition-all duration-150 ${
+                  saving || isImageProcessing
+                    ? "cursor-not-allowed border-[#1a2d46] bg-[#0a1628] text-[#3a5570] opacity-50 shadow-none"
+                    : "border-[#3b82f680] bg-[linear-gradient(135deg,#1e3a8a,#1d4ed8_50%,#0369a1)] text-[#dbeafe] shadow-[0_0_24px_#1d4ed830,inset_0_1px_0_rgba(255,255,255,0.08)]"
+                }`}
+              >
+                <Save size={13} />
+                {saving || isImageProcessing ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+          </div>
         </form>
       </div>
-    </div>
+    </>
   );
 }
