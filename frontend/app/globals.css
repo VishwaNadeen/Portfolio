@@ -19,6 +19,12 @@
   }
 }
 
+/* ✅ FIX: prevent layout shift (navbar moving issue) */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

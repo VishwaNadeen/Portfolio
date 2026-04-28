@@ -145,7 +145,7 @@ export default async function ProjectsPage() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:py-10 md:px-6 md:py-16">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-8 pt-28 sm:pb-10 sm:pt-30 md:px-6 md:pb-16 md:pt-32">
         <section className="mt-6 space-y-5 sm:mt-8 sm:space-y-6 md:mt-10">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white sm:text-xl md:text-2xl">

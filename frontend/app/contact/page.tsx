@@ -229,7 +229,7 @@ export default function ContactPage() {
           </div>
         </div>
 
-        <div className="relative z-10 mx-auto max-w-5xl px-3 py-6 sm:px-4 sm:py-10 md:px-6 md:py-16">
+        <div className="relative z-10 mx-auto max-w-5xl px-3 pb-6 pt-28 sm:px-4 sm:pb-10 sm:pt-30 md:px-6 md:pb-16 md:pt-32">
           <section className="relative overflow-hidden rounded-2xl bg-white/[0.03] p-4 backdrop-blur-xl sm:rounded-3xl sm:p-6 md:p-10">
             <div className="pointer-events-none absolute -right-24 -top-24 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
             <div className="pointer-events-none absolute -left-24 -bottom-24 h-44 w-44 rounded-full bg-blue-500/10 blur-3xl sm:h-64 sm:w-64 md:h-72 md:w-72" />
