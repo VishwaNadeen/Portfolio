@@ -90,6 +90,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [shimPos, setShimPos] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -97,6 +98,10 @@ export default function Navbar() {
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     let raf: number;
@@ -215,7 +220,7 @@ export default function Navbar() {
 
       <header
         className={[
-          "navbar-shell fixed top-4 left-1/2 z-50 w-[92%] max-w-6xl -translate-x-1/2 overflow-hidden rounded-2xl backdrop-blur-2xl transition-all duration-300",
+          "navbar-shell fixed top-4 left-1/2 z-[9999] w-[92%] max-w-6xl -translate-x-1/2 overflow-hidden rounded-2xl backdrop-blur-2xl transition-all duration-300",
           scrolled
             ? "border border-cyan-400/20 bg-slate-950/90 shadow-[0_20px_60px_rgba(0,0,0,0.75),0_0_40px_rgba(34,211,238,0.10)]"
             : "border border-slate-800/70 bg-slate-950/90 shadow-[0_12px_40px_rgba(0,0,0,0.55)]",
@@ -227,9 +232,8 @@ export default function Navbar() {
         <div className="border-glow-line absolute bottom-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent blur-[1px]" />
 
         <nav className="relative z-10 w-full">
-          <div className="flex min-h-16 w-full flex-col justify-center gap-3 px-4 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0 md:px-8">
-            {/* Brand */}
-            <Link href="/" className="shrink-0 self-center no-underline sm:self-auto">
+          <div className="flex min-h-16 w-full items-center justify-between px-4 py-3 md:px-8">
+            <Link href="/" className="shrink-0 no-underline">
               <span className="inline-block text-base font-bold tracking-[0.03em] sm:text-[1.125rem]">
                 {nameChars.map((ch, i) => {
                   const pos = (i / (nameChars.length - 1)) * 100;
@@ -264,8 +268,35 @@ export default function Navbar() {
 
             <CenterDecoration />
 
-            {/* Nav Links */}
-            <div className="flex w-full flex-wrap items-center justify-center gap-1 sm:w-auto sm:justify-end">
+            <button
+              type="button"
+              aria-label="Toggle navigation menu"
+              onClick={() => setMobileOpen((prev) => !prev)}
+              className="relative z-20 flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-400/20 bg-slate-900/70 text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.10)] transition hover:bg-slate-800/80 sm:hidden"
+            >
+              <span className="relative flex h-4 w-5 flex-col justify-between">
+                <span
+                  className={[
+                    "h-0.5 w-full rounded-full bg-cyan-200 transition",
+                    mobileOpen ? "translate-y-[7px] rotate-45" : "",
+                  ].join(" ")}
+                />
+                <span
+                  className={[
+                    "h-0.5 w-full rounded-full bg-cyan-200 transition",
+                    mobileOpen ? "opacity-0" : "opacity-100",
+                  ].join(" ")}
+                />
+                <span
+                  className={[
+                    "h-0.5 w-full rounded-full bg-cyan-200 transition",
+                    mobileOpen ? "-translate-y-[7px] -rotate-45" : "",
+                  ].join(" ")}
+                />
+              </span>
+            </button>
+
+            <div className="hidden items-center justify-end gap-1 sm:flex">
               {navItems.map((item, idx) => {
                 const active =
                   item.href === "/"
@@ -276,7 +307,7 @@ export default function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="nav-link nav-item-wrap relative rounded-xl px-3 py-2 text-xs font-medium sm:px-4 sm:text-sm"
+                    className="nav-link nav-item-wrap relative rounded-xl px-4 py-2 text-sm font-medium"
                     style={{
                       color: active ? "#fff" : "#cbd5e1",
                       animationDelay: `${500 + idx * 80}ms`,
@@ -305,6 +336,49 @@ export default function Navbar() {
                   </Link>
                 );
               })}
+            </div>
+          </div>
+
+          <div
+            className={[
+              "grid transition-all duration-300 sm:hidden",
+              mobileOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+            ].join(" ")}
+          >
+            <div className="overflow-hidden">
+              <div className="flex flex-col gap-1 px-4 pb-4 pt-1">
+                {navItems.map((item, idx) => {
+                  const active =
+                    item.href === "/"
+                      ? pathname === "/"
+                      : pathname?.startsWith(item.href);
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="nav-link nav-item-wrap relative rounded-xl px-4 py-3 text-sm font-medium"
+                      style={{
+                        color: active ? "#fff" : "#cbd5e1",
+                        animationDelay: `${150 + idx * 70}ms`,
+                      }}
+                    >
+                      <span className="nav-hover-bg" />
+
+                      {active && (
+                        <span className="active-pill absolute inset-0 -z-10 rounded-xl bg-gradient-to-br from-blue-500/18 to-cyan-400/15" />
+                      )}
+
+                      <span className="relative z-10">{item.label}</span>
+
+                      {active && (
+                        <span className="absolute right-4 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </nav>
