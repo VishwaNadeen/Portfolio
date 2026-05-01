@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const name = String(body?.name || "").trim();
-    const email = String(body?.email || "").trim();
+    const email = String(body?.email || "").trim().toLowerCase();
     const message = String(body?.message || "").trim();
 
     if (!name || name.length < 2) {
@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!email || !emailRegex.test(email)) {
       return NextResponse.json(
         { message: "Please check your form details." },
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
       text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.6">
-          <h2>📬New Contact Message</h2>
+          <h2>📬 New Contact Message</h2>
           <p><strong>Name:</strong> ${escapeHtml(name)}</p>
           <p><strong>Email:</strong> ${escapeHtml(email)}</p>
           <p><strong>Message:</strong></p>
