@@ -119,14 +119,14 @@ export default function Footer() {
       <div ref={ref} className="w-full px-4 py-6 sm:px-6 lg:px-10">
         <div
           className={[
-            "flex flex-col items-center justify-between gap-5 text-center sm:gap-4 md:flex-row md:text-left",
+            "relative flex flex-col items-center gap-5 text-center sm:gap-4 md:min-h-10 md:flex-row md:justify-center",
             visible
               ? "animate-[fadeUp_0.3s_cubic-bezier(.22,.8,.5,1)_0.05s_both]"
               : "opacity-0",
           ].join(" ")}
         >
           {/* Copyright */}
-          <span className="text-sm leading-6 text-slate-600 md:shrink-0">
+          <span className="text-sm leading-6 text-slate-600 md:absolute md:left-0 md:text-left">
             © {new Date().getFullYear()}{" "}
             <span className="animate-[shimmer_4s_ease-in-out_infinite] bg-gradient-to-r from-slate-200 via-cyan-400 to-indigo-400 bg-[length:250%_auto] bg-clip-text font-semibold text-transparent">
               Vishwa Nadeen
@@ -137,7 +137,7 @@ export default function Footer() {
           {/* Social icons */}
           <div
             className={[
-              "flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:justify-end",
+              "flex w-full flex-wrap items-center justify-center gap-3 sm:gap-4",
               visible
                 ? "animate-[fadeUp_0.3s_cubic-bezier(.22,.8,.5,1)_0.08s_both]"
                 : "opacity-0",

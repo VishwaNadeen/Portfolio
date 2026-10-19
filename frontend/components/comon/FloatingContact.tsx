@@ -1,22 +1,36 @@
-
 "use client";
 
 import {
+  CSSProperties,
   FormEvent,
+  ReactNode,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 import {
-  MessageCircle,
-  X,
-  Send,
-  CheckCircle2,
   AlertCircle,
   ArrowUpRight,
+  CheckCircle2,
   LoaderCircle,
+  Mail,
+  MessageCircle,
+  PenLine,
+  Send,
+  User,
+  X,
 } from "lucide-react";
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaLinkedinIn,
+  FaTelegram,
+  FaWhatsapp,
+} from "react-icons/fa6";
+import type { IconType } from "react-icons";
 import { SOCIAL_LINKS } from "@/data/socialLinks";
+import { usePathname } from "next/navigation";
 
 type FormData = {
   name: string;
@@ -26,6 +40,8 @@ type FormData = {
 
 type FormErrors = Partial<Record<keyof FormData, string>>;
 
+type Phase = "closed" | "open" | "closing";
+
 const INITIAL_FORM: FormData = {
   name: "",
   email: "",
@@ -33,37 +49,111 @@ const INITIAL_FORM: FormData = {
 };
 
 const MAX_MESSAGE_LENGTH = 1000;
+const CLOSE_DURATION_MS = 340;
 
-const SOCIALS = [
+// Avoids the "useLayoutEffect does nothing on the server" warning during SSR.
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+type Social = {
+  name: string;
+  href: string;
+  background: string; // real app-icon background
+  Icon: IconType;
+};
+
+const SOCIALS: Social[] = [
   {
     name: "WhatsApp",
     href: "https://wa.me/94715688517?text=Hello%20Vishwa%2C%20I%20want%20to%20connect%20with%20you.",
-    color: "hover:text-green-300",
+    background: "linear-gradient(160deg, #3DDC6B, #1FAF4B)",
+    Icon: FaWhatsapp,
   },
   {
     name: "LinkedIn",
     href: SOCIAL_LINKS.linkedin,
-    color: "hover:text-blue-300",
+    background: "linear-gradient(160deg, #1D87D6, #0A66C2)",
+    Icon: FaLinkedinIn,
   },
   {
     name: "Instagram",
     href: SOCIAL_LINKS.instagram,
-    color: "hover:text-pink-300",
+    background:
+      "radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)",
+    Icon: FaInstagram,
   },
   {
     name: "Facebook",
     href: SOCIAL_LINKS.facebook,
-    color: "hover:text-sky-300",
+    background: "linear-gradient(160deg, #2D8CFF, #1877F2)",
+    Icon: FaFacebookF,
   },
   {
     name: "Telegram",
     href: SOCIAL_LINKS.telegram,
-    color: "hover:text-cyan-300",
+    background: "linear-gradient(160deg, #2AABEE, #229ED9)",
+    Icon: FaTelegram,
   },
 ];
 
+function inputClass(hasError: boolean) {
+  return [
+    "w-full rounded-xl border bg-white/[0.04] py-3 pl-11 pr-4 text-sm text-white outline-none transition",
+    "placeholder:text-slate-600 focus:bg-white/[0.06] focus:ring-2",
+    hasError
+      ? "border-red-400/50 focus:border-red-400 focus:ring-red-400/10"
+      : "border-white/10 focus:border-cyan-400/60 focus:ring-cyan-400/10",
+  ].join(" ");
+}
+
+function Field({
+  id,
+  label,
+  icon,
+  error,
+  aside,
+  textarea,
+  children,
+}: {
+  id: string;
+  label: string;
+  icon: ReactNode;
+  error?: string;
+  aside?: ReactNode;
+  textarea?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor={id} className="text-sm font-medium text-slate-200">
+          {label}
+        </label>
+        {aside}
+      </div>
+
+      <div className="relative">
+        <span
+          className={`pointer-events-none absolute left-4 text-slate-500 ${
+            textarea ? "top-3.5" : "top-1/2 -translate-y-1/2"
+          }`}
+        >
+          {icon}
+        </span>
+        {children}
+      </div>
+
+      {error && (
+        <p id={`${id}-error`} className="text-xs text-red-400">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function FloatingContact() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [phase, setPhase] = useState<Phase>("closed");
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -72,47 +162,164 @@ export default function FloatingContact() {
     message: string;
   } | null>(null);
 
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const firstInputRef = useRef<HTMLInputElement>(null);
+  const pathname = usePathname();
+  const isAboutPage = pathname === "/about";
 
-  // Close with Escape and prevent background scrolling.
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+  const buttonCenter = useRef({ x: 0, y: 0 });
+
+  const mounted = phase !== "closed";
+  const isOpen = phase === "open";
+  const sent = feedback?.type === "success";
+
+  /* ---------- macOS-style open / close ---------- */
+
+  function captureButtonCenter() {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    buttonCenter.current = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+  }
+
+  // Point the window's transform-origin at the floating button,
+  // so it grows out of (and shrinks back into) the button like a Dock icon.
+  function applyOrigin() {
+    const el = frameRef.current;
+    if (!el) return;
+    el.style.transformOrigin = `${buttonCenter.current.x - el.offsetLeft}px ${
+      buttonCenter.current.y - el.offsetTop
+    }px`;
+  }
+
+  function openPopup() {
+    captureButtonCenter();
+    setPhase("open");
+  }
+
+  function closePopup() {
+    if (submitting || phase !== "open") return;
+    captureButtonCenter();
+    applyOrigin();
+    setPhase("closing");
+  }
+
+  useIsoLayoutEffect(() => {
+    if (phase === "open") applyOrigin();
+  }, [phase]);
+
+  // Unmount once the close animation has finished.
+  useEffect(() => {
+    if (phase !== "closing") return;
+    const timer = window.setTimeout(
+      () => setPhase("closed"),
+      CLOSE_DURATION_MS
+    );
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  /* ---------- tell the navbar to slide away while the window is open ---------- */
+
+  useEffect(() => {
+    const root = document.documentElement;
+
+    if (phase === "open") {
+      root.setAttribute("data-contact-open", "true");
+    } else {
+      root.removeAttribute("data-contact-open");
+    }
+
+    return () => root.removeAttribute("data-contact-open");
+  }, [phase]);
+
+  /* ---------- stop page scrolling (scrollbar stays visible, no layout shift) ---------- */
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const lockX = window.scrollX;
+    const lockY = window.scrollY;
+
+    const insideWindow = (target: EventTarget | null) =>
+      target instanceof Node && !!frameRef.current?.contains(target);
+
+    // Mouse wheel / touch outside the popup must not scroll the page.
+    const blockOutside = (event: Event) => {
+      if (!insideWindow(event.target)) event.preventDefault();
+    };
+
+    // Keyboard scrolling (space, arrows, page keys) outside the popup.
+    const blockKeys = (event: KeyboardEvent) => {
+      const scrollKeys = [
+        " ",
+        "PageUp",
+        "PageDown",
+        "Home",
+        "End",
+        "ArrowUp",
+        "ArrowDown",
+      ];
+      if (scrollKeys.includes(event.key) && !insideWindow(event.target)) {
+        event.preventDefault();
+      }
+    };
+
+    // Catches everything else, e.g. dragging the scrollbar thumb.
+    const keepPosition = () => {
+      if (window.scrollX !== lockX || window.scrollY !== lockY) {
+        window.scrollTo({
+          left: lockX,
+          top: lockY,
+          behavior: "instant" as ScrollBehavior,
+        });
+      }
+    };
+
+    window.addEventListener("wheel", blockOutside, { passive: false });
+    window.addEventListener("touchmove", blockOutside, { passive: false });
+    window.addEventListener("keydown", blockKeys);
+    window.addEventListener("scroll", keepPosition, { passive: true });
+
+    return () => {
+      window.removeEventListener("wheel", blockOutside);
+      window.removeEventListener("touchmove", blockOutside);
+      window.removeEventListener("keydown", blockKeys);
+      window.removeEventListener("scroll", keepPosition);
+    };
+  }, [mounted]);
+
+  /* ---------- Escape + autofocus ---------- */
+
   useEffect(() => {
     if (!isOpen) return;
 
-    const previousOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !submitting) {
-        setIsOpen(false);
+        closePopup();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
     const focusTimer = window.setTimeout(() => {
-      firstInputRef.current?.focus();
-    }, 200);
+      firstInputRef.current?.focus({ preventScroll: true });
+    }, 380);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
       window.clearTimeout(focusTimer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, submitting]);
 
+  /* ---------- form logic ---------- */
+
   function updateField(field: keyof FormData, value: string) {
-    setForm((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
-
-    setErrors((previous) => ({
-      ...previous,
-      [field]: undefined,
-    }));
-
+    setForm((previous) => ({ ...previous, [field]: value }));
+    setErrors((previous) => ({ ...previous, [field]: undefined }));
     setFeedback(null);
   }
 
@@ -127,9 +334,7 @@ export default function FloatingContact() {
 
     if (!form.email.trim()) {
       nextErrors.email = "Please enter your email.";
-    } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
-    ) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       nextErrors.email = "Please enter a valid email address.";
     }
 
@@ -157,12 +362,8 @@ export default function FloatingContact() {
     try {
       const validationResponse = await fetch("/api/validate-email", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: form.email.trim(),
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email.trim() }),
       });
 
       const validationData = await validationResponse.json();
@@ -170,17 +371,14 @@ export default function FloatingContact() {
       if (!validationResponse.ok || !validationData.valid) {
         setErrors({
           email:
-            validationData?.message ||
-            "Please enter a valid email address.",
+            validationData?.message || "Please enter a valid email address.",
         });
         return;
       }
 
       const response = await fetch("/api/contact", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name.trim(),
           email: form.email.trim(),
@@ -191,9 +389,7 @@ export default function FloatingContact() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data?.message || "Failed to send your message."
-        );
+        throw new Error(data?.message || "Failed to send your message.");
       }
 
       setForm(INITIAL_FORM);
@@ -215,341 +411,415 @@ export default function FloatingContact() {
     }
   }
 
-  function closePopup() {
-    if (submitting) return;
-    setIsOpen(false);
-  }
+  // Only transform + opacity are animated (GPU-composited), and each has a single
+  // keyframe interval, so the motion is one continuous curve with no speed jumps.
+  const frameAnimation =
+    phase === "closing"
+      ? `contact-win-close ${CLOSE_DURATION_MS}ms cubic-bezier(.5,0,.75,0) both, contact-fade-out ${CLOSE_DURATION_MS}ms linear both`
+      : "contact-win-open 520ms cubic-bezier(.34,1.22,.64,1) backwards, contact-fade-in 200ms ease-out backwards";
+
+  const backdropAnimation =
+    phase === "closing"
+      ? `contact-backdrop-out ${CLOSE_DURATION_MS}ms ease-in both`
+      : "contact-backdrop-in 320ms ease-out backwards";
 
   return (
     <>
       <style>{`
+        /* Pause the navbar's decorative animation while the popup is open,
+           so the open / close animation gets the whole frame budget */
+        html[data-contact-open] .nav-frame {
+          animation-play-state: paused;
+        }
+
+        /* Rotating outline: a transform-only rotation (runs on the GPU,
+           works in every browser, no @property needed) */
+        @keyframes contact-border-rotate {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
         @keyframes contact-backdrop-in {
           from { opacity: 0; }
-          to { opacity: 1; }
+          to   { opacity: 1; }
         }
-
-        @keyframes contact-panel-in {
-          from {
-            opacity: 0;
-            transform: translateY(18px) scale(.97);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+        @keyframes contact-backdrop-out {
+          from { opacity: 1; }
+          to   { opacity: 0; }
         }
-
+        /* Grows out of the button; the overshoot comes from the easing curve */
+        @keyframes contact-win-open {
+          from { transform: scale(.08, .04); }
+          to   { transform: scale(1, 1); }
+        }
+        /* Genie-style squeeze back into the button */
+        @keyframes contact-win-close {
+          from { transform: scale(1, 1) skewX(0deg); }
+          to   { transform: scale(.06, .03) skewX(-8deg); }
+        }
+        @keyframes contact-fade-in {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes contact-fade-out {
+          0%, 50% { opacity: 1; }
+          100%    { opacity: 0; }
+        }
+        @keyframes contact-pop {
+          0%   { transform: scale(.5); opacity: 0; }
+          70%  { transform: scale(1.12); opacity: 1; }
+          100% { transform: scale(1); }
+        }
         @keyframes contact-button-pulse {
-          0%, 100% {
-            box-shadow: 0 0 0 0 rgba(34, 211, 238, .15),
-                        0 8px 30px rgba(8, 145, 178, .22);
-          }
-          50% {
-            box-shadow: 0 0 0 7px rgba(34, 211, 238, 0),
-                        0 8px 30px rgba(8, 145, 178, .28);
-          }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(34,211,238,.35), 0 10px 30px rgba(8,145,178,.30); }
+          50%      { box-shadow: 0 0 0 10px rgba(34,211,238,0), 0 10px 30px rgba(8,145,178,.40); }
+        }
+        .contact-backdrop {
+          background: rgba(2, 6, 23, 0.7);
+          -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+        }
+        /* Browsers without backdrop-filter get a slightly darker tint instead */
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+          .contact-backdrop { background: rgba(2, 6, 23, 0.88); }
         }
 
+        .contact-frame {
+          position: relative;
+          overflow: hidden;
+          isolation: isolate;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          background: rgba(34, 211, 238, 0.25);
+        }
+        .contact-frame::before {
+          content: "";
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: calc(100% + 100vh);
+          width: calc(100% + 100dvh);
+          aspect-ratio: 1 / 1;
+          transform: translate(-50%, -50%) rotate(0deg);
+          background: conic-gradient(
+            from 0deg,
+            rgba(34,211,238,0.10) 0%,
+            rgba(34,211,238,0.95) 10%,
+            rgba(129,140,248,0.95) 22%,
+            rgba(34,211,238,0.10) 38%,
+            rgba(255,255,255,0.08) 70%,
+            rgba(34,211,238,0.10) 100%
+          );
+          animation: contact-border-rotate 6s linear infinite;
+          pointer-events: none;
+        }
         @media (prefers-reduced-motion: reduce) {
           .contact-motion {
             animation: none !important;
             transition: none !important;
+          }
+          .contact-frame,
+          .contact-frame::before {
+            animation: none !important;
           }
         }
       `}</style>
 
       {/* Floating contact button */}
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={openPopup}
         aria-label="Open contact form"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className="contact-motion group fixed bottom-5 right-5 z-[80] flex size-14 items-center justify-center rounded-full border border-cyan-200/30 bg-gradient-to-br from-cyan-400 to-cyan-700 text-white shadow-[0_8px_30px_rgba(8,145,178,0.25)] transition duration-300 hover:-translate-y-1 hover:scale-105 hover:shadow-[0_12px_40px_rgba(8,145,178,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:bottom-7 sm:right-7"
+        className="contact-motion group fixed right-4 z-[80] flex h-14 w-14 items-center justify-center gap-2.5 rounded-full border border-cyan-200/30 bg-gradient-to-br from-cyan-400 via-cyan-600 to-indigo-600 text-white transition duration-300 hover:-translate-y-1 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:right-7 sm:w-auto sm:pl-4 sm:pr-5"
         style={{
-          animation: isOpen
+          bottom: isAboutPage
+            ? "calc(5.5rem + env(safe-area-inset-bottom))"
+            : "calc(1.25rem + env(safe-area-inset-bottom))",
+          transition: "bottom 350ms ease-out, transform 300ms",
+          // Pause the pulse while the popup is up: it only costs frames behind the backdrop
+          animation: mounted
             ? "none"
             : "contact-button-pulse 3s ease-in-out infinite",
         }}
       >
         <MessageCircle
-          size={25}
-          strokeWidth={1.8}
-          className="transition-transform duration-300 group-hover:rotate-[-8deg]"
+          size={24}
+          strokeWidth={1.9}
+          className="transition-transform duration-300 group-hover:-rotate-6"
         />
-
-        <span className="pointer-events-none absolute right-[calc(100%+12px)] whitespace-nowrap rounded-lg border border-white/10 bg-slate-900/95 px-3 py-2 text-sm font-medium text-white opacity-0 shadow-xl transition duration-200 group-hover:translate-x-0 group-hover:opacity-100">
+        <span className="hidden text-sm font-semibold sm:inline">
           Let&apos;s talk
         </span>
       </button>
 
-      {/* Modal and blurred backdrop */}
-      {isOpen && (
+      {/* Modal */}
+      {mounted && (
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/65 p-0 backdrop-blur-md contact-motion sm:items-center sm:p-5"
-          style={{
-            animation: "contact-backdrop-in 250ms ease-out both",
-          }}
+          className={`fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-5 ${
+            phase === "closing" ? "pointer-events-none" : ""
+          }`}
           onMouseDown={(event) => {
-            if (
-              event.target === event.currentTarget &&
-              !submitting
-            ) {
+            if (!frameRef.current?.contains(event.target as Node)) {
               closePopup();
             }
           }}
         >
+          {/* Backdrop layer: only its opacity is animated */}
           <div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="floating-contact-title"
-            className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-slate-950/95 shadow-[0_25px_100px_rgba(0,0,0,0.6)] backdrop-blur-2xl contact-motion sm:max-h-[90dvh] sm:rounded-3xl"
-            style={{
-              animation: "contact-panel-in 300ms cubic-bezier(.22,.8,.5,1) both",
-            }}
+            aria-hidden="true"
+            className="contact-backdrop contact-motion absolute inset-0"
+            style={{ animation: backdropAnimation }}
+          />
+
+          {/* Animated outline frame */}
+          <div
+            ref={frameRef}
+            className="contact-frame contact-motion flex max-h-[92dvh] w-full max-w-lg rounded-t-3xl p-px shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[90dvh] sm:rounded-3xl"
+            style={{ animation: frameAnimation }}
           >
-            {/* Decorative glow */}
             <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-cyan-500/10 blur-3xl"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-32 -left-24 size-64 rounded-full bg-blue-500/[0.08] blur-3xl"
-            />
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="floating-contact-title"
+              className="relative flex w-full flex-col overflow-hidden rounded-t-[23px] bg-slate-950 sm:rounded-[23px]"
+            >
+              {/* Decorative glow */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-cyan-500/10 blur-3xl"
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -bottom-32 -left-24 size-64 rounded-full bg-indigo-500/10 blur-3xl"
+              />
 
-            {/* Header */}
-            <div className="relative flex items-start justify-between gap-4 border-b border-white/[0.08] px-5 py-5 sm:px-7 sm:py-6">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
-                  <MessageCircle size={22} />
-                </div>
-
-                <div className="min-w-0">
-                  <h2
-                    id="floating-contact-title"
-                    className="text-lg font-bold tracking-tight text-white sm:text-xl"
-                  >
-                    Let&apos;s talk
-                  </h2>
-                  <p className="mt-1 text-sm leading-5 text-slate-400">
-                    Have a project or an idea? Send me a message.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={closePopup}
-                disabled={submitting}
-                aria-label="Close contact form"
-                className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:opacity-40"
-              >
-                <X size={19} />
-              </button>
-            </div>
-
-            {/* Scrollable content */}
-            <div className="relative overflow-y-auto overscroll-contain px-5 py-5 sm:px-7 sm:py-6">
-              {feedback && (
-                <div
-                  role="status"
-                  className={`mb-5 flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm ${
-                    feedback.type === "success"
-                      ? "border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300"
-                      : "border-red-400/20 bg-red-400/[0.08] text-red-300"
-                  }`}
-                >
-                  {feedback.type === "success" ? (
-                    <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-                  ) : (
-                    <AlertCircle size={18} className="mt-0.5 shrink-0" />
-                  )}
-                  <span>{feedback.message}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} noValidate className="space-y-4">
-                {/* Name */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="floating-contact-name"
-                    className="text-sm font-medium text-slate-200"
-                  >
-                    Name
-                  </label>
-
-                  <input
-                    ref={firstInputRef}
-                    id="floating-contact-name"
-                    type="text"
-                    autoComplete="name"
-                    maxLength={100}
-                    value={form.name}
-                    onChange={(event) =>
-                      updateField("name", event.target.value)
-                    }
-                    placeholder="Enter your name"
-                    aria-invalid={!!errors.name}
-                    aria-describedby={
-                      errors.name ? "floating-name-error" : undefined
-                    }
-                    className={`w-full rounded-xl border bg-white/[0.035] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:bg-white/[0.05] focus:ring-2 focus:ring-cyan-400/10 ${
-                      errors.name
-                        ? "border-red-400/50 focus:border-red-400"
-                        : "border-white/10 focus:border-cyan-400/50"
-                    }`}
-                  />
-
-                  {errors.name && (
-                    <p
-                      id="floating-name-error"
-                      className="text-xs text-red-400"
-                    >
-                      {errors.name}
-                    </p>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="floating-contact-email"
-                    className="text-sm font-medium text-slate-200"
-                  >
-                    Email
-                  </label>
-
-                  <input
-                    id="floating-contact-email"
-                    type="email"
-                    autoComplete="email"
-                    maxLength={254}
-                    value={form.email}
-                    onChange={(event) =>
-                      updateField("email", event.target.value)
-                    }
-                    placeholder="you@example.com"
-                    aria-invalid={!!errors.email}
-                    aria-describedby={
-                      errors.email ? "floating-email-error" : undefined
-                    }
-                    className={`w-full rounded-xl border bg-white/[0.035] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:bg-white/[0.05] focus:ring-2 focus:ring-cyan-400/10 ${
-                      errors.email
-                        ? "border-red-400/50 focus:border-red-400"
-                        : "border-white/10 focus:border-cyan-400/50"
-                    }`}
-                  />
-
-                  {errors.email && (
-                    <p
-                      id="floating-email-error"
-                      className="text-xs text-red-400"
-                    >
-                      {errors.email}
-                    </p>
-                  )}
-                </div>
-
-                {/* Message */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <label
-                      htmlFor="floating-contact-message"
-                      className="text-sm font-medium text-slate-200"
-                    >
-                      Message
-                    </label>
-
-                    <span
-                      className={`text-xs tabular-nums ${
-                        form.message.length > MAX_MESSAGE_LENGTH * 0.9
-                          ? "text-amber-400"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      {form.message.length}/{MAX_MESSAGE_LENGTH}
-                    </span>
+              {/* Header */}
+              <div className="relative flex items-start justify-between gap-4 px-5 pb-4 pt-5 sm:px-7 sm:pt-6">
+                <div className="flex min-w-0 items-center gap-3.5">
+                  <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 text-slate-950 shadow-[0_0_24px_rgba(34,211,238,0.35)]">
+                    <MessageCircle size={23} strokeWidth={2.2} />
                   </div>
 
-                  <textarea
-                    id="floating-contact-message"
-                    rows={4}
-                    maxLength={MAX_MESSAGE_LENGTH}
-                    value={form.message}
-                    onChange={(event) =>
-                      updateField("message", event.target.value)
-                    }
-                    placeholder="Tell me about your idea..."
-                    aria-invalid={!!errors.message}
-                    aria-describedby={
-                      errors.message
-                        ? "floating-message-error"
-                        : undefined
-                    }
-                    className={`min-h-[110px] w-full resize-y rounded-xl border bg-white/[0.035] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-slate-600 focus:bg-white/[0.05] focus:ring-2 focus:ring-cyan-400/10 ${
-                      errors.message
-                        ? "border-red-400/50 focus:border-red-400"
-                        : "border-white/10 focus:border-cyan-400/50"
-                    }`}
-                  />
-
-                  {errors.message && (
-                    <p
-                      id="floating-message-error"
-                      className="text-xs text-red-400"
+                  <div className="min-w-0">
+                    <h2
+                      id="floating-contact-title"
+                      className="text-lg font-bold tracking-tight text-white sm:text-xl"
                     >
-                      {errors.message}
+                      Let&apos;s talk
+                    </h2>
+                    <p className="mt-0.5 text-sm leading-5 text-slate-400">
+                      Have a project or an idea? Send me a message.
                     </p>
-                  )}
+                  </div>
                 </div>
 
-                {/* Submit */}
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={closePopup}
                   disabled={submitting}
-                  className="group flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-300/20 bg-gradient-to-r from-cyan-500 to-cyan-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-950/20 transition hover:from-cyan-400 hover:to-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label="Close contact form"
+                  className="grid size-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:opacity-40"
                 >
-                  {submitting ? (
-                    <>
-                      <LoaderCircle size={17} className="animate-spin" />
-                      Sending message...
-                    </>
-                  ) : (
-                    <>
-                      <Send
-                        size={16}
-                        className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                      />
-                      Send Message
-                    </>
-                  )}
+                  <X size={18} />
                 </button>
-              </form>
-
-              {/* Social links */}
-              <div className="my-5 flex items-center gap-3">
-                <div className="h-px flex-1 bg-white/[0.08]" />
-                <span className="text-xs text-slate-500">
-                  Or connect directly
-                </span>
-                <div className="h-px flex-1 bg-white/[0.08]" />
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
-                {SOCIALS.map((social) => (
-                  <a
-                    key={social.name}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-1 text-xs text-slate-400 transition-colors ${social.color}`}
+              {/* Scrollable content */}
+              <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 pt-1 sm:px-7">
+                {sent ? (
+                  <div
+                    role="status"
+                    className="flex flex-col items-center gap-3 py-8 text-center"
                   >
-                    {social.name}
-                    <ArrowUpRight size={12} />
-                  </a>
-                ))}
+                    <div
+                      className="contact-motion grid size-16 place-items-center rounded-full bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/30"
+                      style={{
+                        animation:
+                          "contact-pop 500ms cubic-bezier(.22,.8,.5,1) both",
+                      }}
+                    >
+                      <CheckCircle2 size={34} />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">
+                      Message sent!
+                    </h3>
+                    <p className="max-w-xs text-sm text-slate-400">
+                      {feedback?.message} I&apos;ll get back to you soon.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setFeedback(null)}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/[0.08]"
+                    >
+                      Send another message
+                      <ArrowUpRight size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {feedback?.type === "error" && (
+                      <div
+                        role="alert"
+                        className="mb-4 flex items-start gap-2.5 rounded-xl border border-red-400/20 bg-red-400/[0.08] px-3.5 py-3 text-sm text-red-300"
+                      >
+                        <AlertCircle size={18} className="mt-0.5 shrink-0" />
+                        <span>{feedback.message}</span>
+                      </div>
+                    )}
+
+                    <form
+                      onSubmit={handleSubmit}
+                      noValidate
+                      className="space-y-4"
+                    >
+                      <Field
+                        id="floating-contact-name"
+                        label="Name"
+                        icon={<User size={17} />}
+                        error={errors.name}
+                      >
+                        <input
+                          ref={firstInputRef}
+                          id="floating-contact-name"
+                          type="text"
+                          autoComplete="name"
+                          maxLength={100}
+                          value={form.name}
+                          onChange={(e) => updateField("name", e.target.value)}
+                          placeholder="Your name"
+                          aria-invalid={!!errors.name}
+                          aria-describedby={
+                            errors.name
+                              ? "floating-contact-name-error"
+                              : undefined
+                          }
+                          className={inputClass(!!errors.name)}
+                        />
+                      </Field>
+
+                      <Field
+                        id="floating-contact-email"
+                        label="Email"
+                        icon={<Mail size={17} />}
+                        error={errors.email}
+                      >
+                        <input
+                          id="floating-contact-email"
+                          type="email"
+                          autoComplete="email"
+                          maxLength={254}
+                          value={form.email}
+                          onChange={(e) =>
+                            updateField("email", e.target.value)
+                          }
+                          placeholder="you@example.com"
+                          aria-invalid={!!errors.email}
+                          aria-describedby={
+                            errors.email
+                              ? "floating-contact-email-error"
+                              : undefined
+                          }
+                          className={inputClass(!!errors.email)}
+                        />
+                      </Field>
+
+                      <Field
+                        id="floating-contact-message"
+                        label="Message"
+                        icon={<PenLine size={17} />}
+                        error={errors.message}
+                        textarea
+                        aside={
+                          <span
+                            className={`text-xs tabular-nums ${
+                              form.message.length > MAX_MESSAGE_LENGTH * 0.9
+                                ? "text-amber-400"
+                                : "text-slate-500"
+                            }`}
+                          >
+                            {form.message.length}/{MAX_MESSAGE_LENGTH}
+                          </span>
+                        }
+                      >
+                        <textarea
+                          id="floating-contact-message"
+                          rows={4}
+                          maxLength={MAX_MESSAGE_LENGTH}
+                          value={form.message}
+                          onChange={(e) =>
+                            updateField("message", e.target.value)
+                          }
+                          placeholder="Tell me about your idea..."
+                          aria-invalid={!!errors.message}
+                          aria-describedby={
+                            errors.message
+                              ? "floating-contact-message-error"
+                              : undefined
+                          }
+                          className={`${inputClass(
+                            !!errors.message
+                          )} min-h-[112px] resize-y leading-6`}
+                        />
+                      </Field>
+
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_10px_30px_-10px_rgba(34,211,238,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {submitting ? (
+                          <>
+                            <LoaderCircle
+                              size={17}
+                              className="animate-spin"
+                            />
+                            Sending message...
+                          </>
+                        ) : (
+                          <>
+                            <Send
+                              size={16}
+                              className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                            />
+                            Send Message
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  </>
+                )}
+              </div>
+
+              {/* Quick connect: real app icons, pinned to the bottom */}
+              <div className="relative border-t border-white/[0.08] bg-white/[0.02] px-5 pb-4 pt-3.5 sm:px-7">
+                <p className="mb-3 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">
+                  Quick connect
+                </p>
+
+                <div className="grid grid-cols-5 gap-2">
+                  {SOCIALS.map(({ name, href, background, Icon }) => (
+                    <a
+                      key={name}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={name}
+                      className="group/app flex flex-col items-center gap-1.5 focus-visible:outline-none"
+                    >
+                      <span
+                        className="grid size-12 place-items-center rounded-[14px] text-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-black/20 transition duration-200 ease-out group-hover/app:-translate-y-1.5 group-hover/app:scale-110 group-focus-visible/app:ring-2 group-focus-visible/app:ring-cyan-300"
+                        style={{ background } as CSSProperties}
+                      >
+                        <Icon size={22} />
+                      </span>
+                      <span className="text-[10px] font-medium text-slate-400 transition-colors group-hover/app:text-slate-200">
+                        {name}
+                      </span>
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

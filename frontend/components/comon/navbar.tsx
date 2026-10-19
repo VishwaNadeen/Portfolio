@@ -8,7 +8,7 @@ const navItems = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
-  { href: "/contact", label: "Contact" },
+  { href: "/experience", label: "Experience" },
 ];
 
 export default function Navbar() {
@@ -21,6 +21,7 @@ export default function Navbar() {
   const [hovered, setHovered] = useState<number | null>(null);
   const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
   const [shimPos, setShimPos] = useState(0);
+  const [popupOpen, setPopupOpen] = useState(false);
   const nameChars = "Vishwa Nadeen".split("");
 
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -34,6 +35,7 @@ export default function Navbar() {
 
   // Name shimmer sweep
   useEffect(() => {
+    if (popupOpen) return; // pause while the "Let's talk" popup is open
     let raf: number;
     let start: number | null = null;
     const duration = 4000;
@@ -44,6 +46,19 @@ export default function Navbar() {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
+  }, [popupOpen]);
+
+  // Slide away (same hide animation) while the "Let's talk" popup is open
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => setPopupOpen(root.hasAttribute("data-contact-open"));
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ["data-contact-open"],
+    });
+    return () => observer.disconnect();
   }, []);
 
   // Close mobile menu on route change
@@ -89,7 +104,11 @@ export default function Navbar() {
     {/* Scroll progress: pinned to the very top of the screen, away from the navbar outline */}
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-x-0 top-0 z-[10000] h-[3px]"
+      className={[
+        "pointer-events-none fixed inset-x-0 top-0 z-[10000] h-[3px]",
+        "transition-transform duration-500 ease-[cubic-bezier(.22,.8,.5,1)] motion-reduce:transition-none",
+        popupOpen ? "-translate-y-[400%]" : "translate-y-0",
+      ].join(" ")}
     >
       <div
         className="h-full origin-left bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 shadow-[0_0_10px_rgba(34,211,238,0.7)]"
@@ -100,7 +119,9 @@ export default function Navbar() {
       className={[
         "fixed inset-x-0 top-4 z-[9999] flex justify-center",
         "transition-transform duration-500 ease-[cubic-bezier(.22,.8,.5,1)] motion-reduce:transition-none",
-        hidden && !mobileOpen ? "-translate-y-[140%]" : "translate-y-0",
+        (hidden && !mobileOpen) || popupOpen
+          ? "-translate-y-[140%]"
+          : "translate-y-0",
       ].join(" ")}
     >
       <style>{`

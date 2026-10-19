@@ -15,7 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: "https://www.vishwanadeen.lk/contact",
+      url: "https://www.vishwanadeen.lk/experience",
       priority: 0.7,
     },
   ];
