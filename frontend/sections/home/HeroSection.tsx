@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import profile from "@/data/profile";
 
 /* Mouse parallax hook */
 function useMouse() {
@@ -13,7 +15,6 @@ function useMouse() {
         y: e.clientY / window.innerHeight,
       });
     };
-
     window.addEventListener("mousemove", handler, { passive: true });
     return () => window.removeEventListener("mousemove", handler);
   }, []);
@@ -21,41 +22,285 @@ function useMouse() {
   return pos;
 }
 
-/* Glitch effect on name */
-function GlitchName({ name }: { name: string }) {
-  const [glitching, setGlitching] = useState(false);
-
-  const trigger = useCallback(() => {
-    setGlitching(true);
-    setTimeout(() => setGlitching(false), 600);
-  }, []);
-
+/* Name with a clean hover style: glow + light sweep + drawn underline */
+function AnimatedName({ name }: { name: string }) {
   return (
-    <span
-      className="relative inline-block cursor-default select-none"
-      onMouseEnter={trigger}
-    >
-      <span className="animate-[gradientMove_6s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 bg-[length:200%_200%] bg-clip-text text-transparent">
+    <span className="group relative inline-block cursor-default select-none">
+      {/* base gradient text + soft glow on hover */}
+      <span className="animate-[gradientMove_6s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 bg-[length:200%_200%] bg-clip-text text-transparent transition-[filter] duration-300 group-hover:[filter:drop-shadow(0_0_14px_rgba(34,211,238,0.5))]">
         {name}
       </span>
 
-      {glitching && (
-        <>
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-rose-400 to-fuchsia-400 bg-clip-text text-transparent [clip-path:inset(30%_0_50%_0)] [mix-blend-mode:screen] [transform:translate(-3px,2px)]"
-          >
-            {name}
-          </span>
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent [clip-path:inset(60%_0_20%_0)] [mix-blend-mode:screen] [transform:translate(3px,-2px)]"
-          >
-            {name}
-          </span>
-        </>
-      )}
+      {/* light sweep, clipped to the letters */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgba(255,255,255,0.85)_50%,transparent_65%)] [background-position:150%_0] [background-size:250%_100%] bg-clip-text text-transparent opacity-0 group-hover:animate-[sweep_0.9s_ease-out] group-hover:opacity-100 motion-reduce:hidden"
+      >
+        {name}
+      </span>
+
+      {/* underline that draws in from the left */}
+      <span
+        aria-hidden
+        className="absolute -bottom-1 left-0 h-[3px] w-full origin-left scale-x-0 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-transform duration-500 ease-[cubic-bezier(.22,.8,.5,1)] group-hover:scale-x-100"
+      />
     </span>
+  );
+}
+
+/* Rotating "I build ..." line */
+const ROLES = [
+  "cross-platform mobile apps",
+  "full web experiences",
+  "interactions that feel right",
+];
+
+function RotatingRole() {
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setI((v) => (v + 1) % ROLES.length), 2800);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 text-base font-medium text-slate-300 sm:text-lg md:text-xl">
+      <span className="text-slate-500">I build</span>
+      <span
+        key={i}
+        className="animate-[swap_0.5s_cubic-bezier(.22,.8,.5,1)_both] text-cyan-300 motion-reduce:animate-none"
+      >
+        {ROLES[i]}
+      </span>
+    </p>
+  );
+}
+
+/* GitHub avatar: pop-in, blur-up load, float, spinning ring, glow, parallax.
+   Hover (mouse) / tap (touch) / focus -> enlarged popup over a blurred backdrop. */
+function GitHubAvatar({
+  username,
+  className = "",
+  px = 0,
+  py = 0,
+}: {
+  username: string;
+  className?: string;
+  px?: number;
+  py?: number;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [geo, setGeo] = useState({ size: 320, ox: 160, oy: 160 });
+  const imgRef = useRef<HTMLImageElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+
+  // portal needs the client; also handles images cached before hydration
+  useEffect(() => {
+    setMounted(true);
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) setLoaded(true);
+  }, []);
+
+  const show = () => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const size = Math.min(window.innerWidth * 0.8, window.innerHeight * 0.7, 380);
+    const left = (window.innerWidth - size) / 2;
+    const top = (window.innerHeight - size) / 2;
+    // popup grows out of the small photo's position
+    setGeo({
+      size,
+      ox: r.left + r.width / 2 - left,
+      oy: r.top + r.height / 2 - top,
+    });
+    setOpen(true);
+  };
+  const hide = () => setOpen(false);
+
+  // close on Escape, scroll, or a tap outside (touch devices)
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onDown = (e: PointerEvent) => {
+      if (!triggerRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onScroll = () => setOpen(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [open]);
+
+  const fallback = (
+    <div className="flex size-full items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600 text-2xl font-bold text-white">
+      VN
+    </div>
+  );
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        tabIndex={0}
+        role="button"
+        aria-label="Enlarge profile photo"
+        onPointerEnter={(e) => e.pointerType === "mouse" && show()}
+        onPointerLeave={(e) => e.pointerType === "mouse" && hide()}
+        onPointerUp={(e) => e.pointerType !== "mouse" && (open ? hide() : show())}
+        onFocus={show}
+        onBlur={hide}
+        className={`cursor-zoom-in rounded-full outline-none transition-transform duration-300 ease-out focus-visible:ring-2 focus-visible:ring-cyan-300 ${className}`}
+        style={{ transform: `translate(${px}px, ${py}px)` }}
+      >
+        <div className="group relative size-full animate-[pop_0.8s_cubic-bezier(.22,.8,.5,1)_0.4s_both] opacity-0 motion-reduce:animate-none motion-reduce:opacity-100">
+          <div className="size-full animate-[float_5s_ease-in-out_infinite] transition-transform duration-500 group-hover:scale-105 motion-reduce:animate-none">
+            {/* pulsing glow */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-3 animate-[pulseGlow_3s_ease-in-out_infinite] rounded-full bg-cyan-400/30 blur-xl motion-reduce:animate-none"
+            />
+
+            {/* rotating gradient ring */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-[3px] animate-[spin_6s_linear_infinite] rounded-full bg-[conic-gradient(from_0deg,#22d3ee,#3b82f6,transparent_60%,#22d3ee)] motion-reduce:animate-none"
+            />
+
+            {/* image */}
+            <div className="relative size-full overflow-hidden rounded-full border-4 border-slate-950 bg-slate-900">
+              {!loaded && !failed && (
+                <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-800 to-slate-700" />
+              )}
+
+              {failed ? (
+                fallback
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  ref={imgRef}
+                  src={`https://github.com/${username}.png?size=320`}
+                  alt="Vishwa Nadeen's GitHub profile photo"
+                  width={160}
+                  height={160}
+                  onLoad={() => setLoaded(true)}
+                  onError={() => setFailed(true)}
+                  className={`size-full object-cover transition-all duration-700 ease-out ${
+                    loaded ? "scale-100 opacity-100 blur-0" : "scale-110 opacity-0 blur-md"
+                  }`}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* popup: rendered in a portal so transformed / blurred parents can't clip it */}
+      {mounted &&
+        createPortal(
+          <>
+            {/* blurred backdrop */}
+            <div
+              aria-hidden
+              className={`pointer-events-none fixed inset-0 z-[100] bg-slate-950/50 backdrop-blur-md transition-opacity duration-500 ease-out motion-reduce:transition-none ${
+                open ? "opacity-100" : "opacity-0"
+              }`}
+            />
+
+            {/* enlarged photo */}
+            <div
+              aria-hidden
+              className="pointer-events-none fixed inset-0 z-[101] flex items-center justify-center"
+            >
+              <div
+                className={`relative transition-all duration-500 ease-[cubic-bezier(.22,.8,.5,1)] motion-reduce:transition-none ${
+                  open ? "scale-100 opacity-100 blur-0" : "scale-[0.25] opacity-0 blur-sm"
+                }`}
+                style={{
+                  width: geo.size,
+                  height: geo.size,
+                  transformOrigin: `${geo.ox}px ${geo.oy}px`,
+                }}
+              >
+                <div className="absolute -inset-6 animate-[pulseGlow_3s_ease-in-out_infinite] rounded-full bg-cyan-400/30 blur-2xl motion-reduce:animate-none" />
+                <div className="absolute -inset-1 animate-[spin_6s_linear_infinite] rounded-full bg-[conic-gradient(from_0deg,#22d3ee,#3b82f6,transparent_60%,#22d3ee)] motion-reduce:animate-none" />
+                <div className="relative size-full overflow-hidden rounded-full border-[6px] border-slate-950 bg-slate-900 shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
+                  {failed ? (
+                    fallback
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`https://github.com/${username}.png?size=640`}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
+    </>
+  );
+}
+
+/* Code-style profile card */
+function ProfileCard({ tx, ty }: { tx: number; ty: number }) {
+  return (
+    <div className="[perspective:1000px]">
+      <div
+        className="relative rounded-2xl border border-white/10 bg-slate-950/70 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-transform duration-300 ease-out"
+        style={{ transform: `rotateY(${tx}deg) rotateX(${-ty}deg)` }}
+      >
+        {/* window bar */}
+        <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+          <span className="size-2.5 rounded-full bg-rose-400/80" />
+          <span className="size-2.5 rounded-full bg-amber-300/80" />
+          <span className="size-2.5 rounded-full bg-emerald-400/80" />
+          <span className="ml-3 font-mono text-xs text-slate-500">profile.ts</span>
+        </div>
+
+        <pre className="overflow-x-auto p-4 font-mono text-[12px] leading-6 text-slate-300 sm:p-5 sm:text-[13px]">
+          <code>
+            <span className="text-fuchsia-300">const</span> <span className="text-cyan-300">me</span>{" "}
+            = {"{"}
+            {"\n"}
+            {"  "}name: <span className="text-emerald-300">&quot;{profile.name}&quot;</span>,{"\n"}
+            {"  "}role: <span className="text-emerald-300">&quot;{profile.role}&quot;</span>,{"\n"}
+            {"  "}from: <span className="text-emerald-300">&quot;{profile.from}&quot;</span>,{"\n"}
+            {"  "}builds: [{"\n"}
+            {"    "}
+            <span className="text-emerald-300">&quot;{profile.builds[0]}&quot;</span>,{"\n"}
+            {"    "}
+            <span className="text-emerald-300">&quot;{profile.builds[1]}&quot;</span>,{"\n"}
+            {"    "}
+            <span className="text-emerald-300">&quot;{profile.builds[2]}&quot;</span>,{"\n"}
+            {"    "}
+            <span className="text-emerald-300">&quot;{profile.builds[3]}&quot;</span>,{"\n"}
+            {"  "}],{"\n"}
+            {"  "}cares: <span className="text-emerald-300">&quot;{profile.cares}&quot;</span>,
+            {"\n"}
+            {"  "}focus: [{"\n"}
+            {"    "}
+            <span className="text-emerald-300">&quot;{profile.focus[0]}&quot;</span>,{"\n"}
+            {"    "}
+            <span className="text-emerald-300">&quot;{profile.focus[1]}&quot;</span>,{"\n"}
+            {"  "}],{"\n"}
+            {"  "}goal: <span className="text-emerald-300">&quot;{profile.goal}&quot;</span>,
+            {"\n"}
+            {"}"};
+            <span className="ml-0.5 inline-block h-4 w-[7px] translate-y-0.5 animate-[blink_1.1s_steps(1)_infinite] bg-cyan-300/80 motion-reduce:animate-none" />
+          </code>
+        </pre>
+      </div>
+    </div>
   );
 }
 
@@ -65,14 +310,12 @@ export default function HeroSection() {
 
   const px = (mouse.x - 0.5) * 28;
   const py = (mouse.y - 0.5) * 28;
+  const tx = (mouse.x - 0.5) * 8; // card tilt (deg)
+  const ty = (mouse.y - 0.5) * 8;
 
   return (
     <>
       <style>{`
-        @keyframes scan {
-          0%   { transform: translateY(-100%); }
-          100% { transform: translateY(100vh); }
-        }
         @keyframes rise {
           from { opacity: 0; transform: translateY(28px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -82,46 +325,85 @@ export default function HeroSection() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
+        @keyframes sweep {
+          from { background-position: 150% 0; }
+          to   { background-position: -50% 0; }
+        }
+        @keyframes swap {
+          from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+          to   { opacity: 1; transform: translateY(0);   filter: blur(0);   }
+        }
+        @keyframes blink {
+          0%, 49% { opacity: 1; }
+          50%, 100% { opacity: 0; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-8px); }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50%      { opacity: 1;   transform: scale(1.08); }
+        }
+        @keyframes pop {
+          from { opacity: 0; transform: scale(0.6) rotate(-8deg); }
+          to   { opacity: 1; transform: scale(1)   rotate(0); }
+        }
       `}</style>
 
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-950/70 to-slate-900/40 p-5 backdrop-blur-xl sm:p-8 md:p-12">
-        {/* scan line */}
-        <div className="pointer-events-none absolute inset-0 h-[60px] bg-[linear-gradient(transparent_0%,rgba(103,232,249,0.03)_50%,transparent_100%)] animate-[scan_8s_linear_infinite]" />
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-slate-950/70 to-slate-900/40 p-5 backdrop-blur-xl sm:p-8 md:p-12">
+        {/* dot grid, faded toward the edges */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(rgba(148,163,184,0.25)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]"
+        />
 
         {/* mouse-parallax glows */}
         <div
-          className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-cyan-500/10 blur-3xl transition-transform duration-300 ease-out sm:-right-24 sm:-top-24 sm:h-64 sm:w-64 md:-right-32 md:-top-32 md:h-80 md:w-80"
+          className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-cyan-500/15 blur-3xl transition-transform duration-300 ease-out sm:h-64 sm:w-64 md:-right-32 md:-top-32 md:h-80 md:w-80"
           style={{ transform: `translate(${-px * 0.4}px, ${-py * 0.4}px)` }}
         />
         <div
-          className="pointer-events-none absolute -bottom-20 -left-20 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl transition-transform duration-300 ease-out sm:-bottom-24 sm:-left-24 sm:h-64 sm:w-64 md:-bottom-32 md:-left-32 md:h-80 md:w-80"
+          className="pointer-events-none absolute -bottom-20 -left-20 h-52 w-52 rounded-full bg-blue-500/15 blur-3xl transition-transform duration-300 ease-out sm:h-64 sm:w-64 md:-bottom-32 md:-left-32 md:h-80 md:w-80"
           style={{ transform: `translate(${px * 0.3}px, ${py * 0.3}px)` }}
         />
 
-        {/* floating particles */}
-        <div className="pointer-events-none absolute inset-0 opacity-30">
-          <div className="absolute left-8 top-10 h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping sm:left-12 sm:top-12 sm:h-2 sm:w-2" />
-          <div className="absolute right-10 top-20 h-1.5 w-1.5 rounded-full bg-blue-400 animate-ping sm:right-20 sm:top-24 sm:h-2 sm:w-2" />
-          <div className="absolute bottom-16 left-1/3 h-1.5 w-1.5 rounded-full bg-cyan-300 animate-ping sm:bottom-20 sm:h-2 sm:w-2" />
-        </div>
-
         {/* ── content ── */}
-        <div className="relative space-y-4 animate-[rise_0.65s_cubic-bezier(.22,.8,.5,1)_0.1s_both] opacity-0 sm:space-y-5 md:space-y-6">
-          {/* heading */}
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-5xl">
-              Hi, I'm <GlitchName name="Vishwa Nadeen" />
-            </h1>
+        <div className="relative grid items-center gap-8 md:gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+          {/* left: heading + avatar (right of the name), then paragraph */}
+          <div className="animate-[rise_0.65s_cubic-bezier(.22,.8,.5,1)_0.1s_both] space-y-6 opacity-0 md:space-y-7">
+            <div className="flex items-center gap-4 sm:gap-6 md:gap-8">
+              {/* greeting (smaller), name (large, never wraps), role */}
+              <div className="min-w-0 space-y-3">
+                <h1 className="font-bold tracking-tight text-white">
+                  <span className="mb-1 block text-lg font-medium text-slate-300 sm:text-xl md:text-2xl">
+                    Hi, I&apos;m
+                  </span>
+                  <span className="block whitespace-nowrap text-2xl sm:text-4xl md:text-5xl lg:text-4xl xl:text-5xl 2xl:text-6xl">
+                    <AnimatedName name="Vishwa Nadeen" />
+                  </span>
+                </h1>
+                <RotatingRole />
+              </div>
+
+              {/* avatar on the right of the name */}
+              <GitHubAvatar
+                username={profile.githubUsername}
+                className="size-16 shrink-0 sm:size-24 md:size-28 2xl:size-32"
+                px={px * 0.25}
+                py={py * 0.25}
+              />
+            </div>
+
+            <p className="max-w-2xl text-justify text-sm leading-7 text-slate-300 sm:text-base sm:leading-8 md:text-lg">
+              {profile.bio}
+            </p>
           </div>
 
-          {/* description */}
-          <p className="text-sm leading-7 text-justify text-slate-300 sm:text-base sm:leading-8 md:text-lg">
-            Hi, I'm a Software Engineer from Sri Lanka with a love for building things people enjoy using. 
-            From cross-platform mobile apps to full web experiences, I focus on quality at every layer - 
-            thoughtful design, and interactions that just feel right. I enjoy turning ideas into real, 
-            working products that make a meaningful difference in people's daily lives, one great experience 
-            at a time.
-          </p>
+          {/* right: code card (hidden on small screens to keep the hero short) */}
+          <div className="hidden animate-[rise_0.8s_cubic-bezier(.22,.8,.5,1)_0.3s_both] opacity-0 lg:block">
+            <ProfileCard tx={tx} ty={ty} />
+          </div>
         </div>
       </section>
     </>

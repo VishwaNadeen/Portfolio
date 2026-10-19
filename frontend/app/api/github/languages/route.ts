@@ -13,6 +13,7 @@ type OutItem = {
   lang: string;
   bytes: number;
   pct: number;
+  projects: number;
 };
 
 function chunk<T>(arr: T[], size: number) {
@@ -82,6 +83,8 @@ export async function GET(): Promise<Response> {
 
     // 3) sum languages across repos
     const totals: Record<string, number> = {};
+    const projectTotals: Record<string, number> = {}; // repos that use each language
+    let totalProjects = 0; // repos with at least one detected language
 
     // concurrency batch size (avoid hammering GitHub)
     const BATCH = 10;
@@ -96,8 +99,11 @@ export async function GET(): Promise<Response> {
         if (r.status !== "fulfilled") continue;
         const langs = r.value;
 
+        if (Object.keys(langs).length > 0) totalProjects += 1;
+
         for (const [lang, bytes] of Object.entries(langs)) {
           totals[lang] = (totals[lang] || 0) + (Number(bytes) || 0);
+          projectTotals[lang] = (projectTotals[lang] || 0) + 1; // +1 per repo, not per byte
         }
       }
     }
@@ -110,10 +116,11 @@ export async function GET(): Promise<Response> {
         lang,
         bytes,
         pct: totalBytes ? (bytes / totalBytes) * 100 : 0,
+        projects: projectTotals[lang] || 0,
       }))
       .sort((a, b) => b.pct - a.pct);
 
-    return Response.json({ user, totalBytes, items });
+    return Response.json({ user, totalBytes, totalProjects, items });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return Response.json({ error: msg }, { status: 500 });

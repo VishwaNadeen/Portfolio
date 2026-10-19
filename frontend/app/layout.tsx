@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "../components/comon/navbar";
 import Footer from "../components/comon/footer";
+import FloatingContact from "@/components/comon/FloatingContact";
 
 export const metadata: Metadata = {
   title: {
@@ -77,6 +78,8 @@ export default function RootLayout({
         <Navbar />
         <main className="min-h-[calc(100vh-120px)]">{children}</main>
         <Footer />
+
+        <FloatingContact />
       </body>
     </html>
   );

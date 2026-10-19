@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -11,378 +11,309 @@ const navItems = [
   { href: "/contact", label: "Contact" },
 ];
 
-const CODE_PAIRS = [
-  ["</>", "{ }"],
-  ["=>", "[ ]"],
-  ["fn()", "&&"],
-  ["const", "=>"],
-  ["async", "{ }"],
-];
-
-function CenterDecoration() {
-  const [frame, setFrame] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(
-      () => setFrame((f) => (f + 1) % CODE_PAIRS.length),
-      4000
-    );
-    return () => clearInterval(id);
-  }, []);
-
-  const [left, right] = CODE_PAIRS[frame];
-
-  return (
-    <div className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 select-none items-center gap-2.5 lg:flex">
-      <style>{`
-        @keyframes code-fade {
-          0%   { opacity:0; transform:translateY(6px);  }
-          12%  { opacity:1; transform:translateY(0px);  }
-          88%  { opacity:1; transform:translateY(0px);  }
-          100% { opacity:0; transform:translateY(-6px); }
-        }
-        @keyframes dot-travel {
-          0%   { left:0%;   opacity:0; }
-          8%   { opacity:1; }
-          92%  { opacity:1; }
-          100% { left:100%; opacity:0; }
-        }
-      `}</style>
-
-      <span
-        key={`l-${frame}`}
-        className="text-[10px] font-medium tracking-[0.05em]"
-        style={{
-          fontFamily: "'Fira Code','JetBrains Mono',monospace",
-          color: "rgba(34,211,238,0.55)",
-          animation: "code-fade 4s ease-in-out both",
-        }}
-      >
-        {left}
-      </span>
-
-      <div className="relative flex h-0.5 w-12 items-center">
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400/15 via-indigo-500/50 to-cyan-400/15" />
-        <div
-          key={`dt-${frame}`}
-          className="absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-cyan-400/90 shadow-[0_0_8px_2px_rgba(34,211,238,0.5)]"
-          style={{ animation: "dot-travel 4s ease-in-out infinite" }}
-        />
-      </div>
-
-      <span
-        key={`r-${frame}`}
-        className="text-[10px] font-medium tracking-[0.05em]"
-        style={{
-          fontFamily: "'Fira Code','JetBrains Mono',monospace",
-          color: "rgba(129,140,248,0.55)",
-          animation: "code-fade 4s ease-in-out both",
-        }}
-      >
-        {right}
-      </span>
-    </div>
-  );
-}
-
 export default function Navbar() {
   const pathname = usePathname();
-  const [scrolled, setScrolled] = useState(false);
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const [shimPos, setShimPos] = useState(0);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
+  const [hidden, setHidden] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
+  const [shimPos, setShimPos] = useState(0);
+  const nameChars = "Vishwa Nadeen".split("");
+
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const lastY = useRef(0);
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : !!pathname?.startsWith(href);
+
+  const activeIdx = navItems.findIndex((i) => isActive(i.href));
+  const targetIdx = hovered ?? activeIdx;
+
+  // Name shimmer sweep
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    let raf: number;
+    let start: number | null = null;
+    const duration = 4000;
+    const step = (ts: number) => {
+      if (start === null) start = ts;
+      setShimPos((((ts - start) % duration) / duration) * 100);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Scroll: compact style, hide on scroll down / show on scroll up, progress line
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+
+      setScrolled(y > 12);
+      setProgress(max > 0 ? Math.min(1, y / max) : 0);
+
+      if (y > lastY.current && y > 140) setHidden(true);
+      else if (y < lastY.current) setHidden(false);
+      lastY.current = y;
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    let raf: number;
-    let start: number | null = null;
-    const duration = 4000;
-
-    const step = (ts: number) => {
-      if (!start) start = ts;
-      const p = ((ts - start) % duration) / duration;
-      setShimPos(p * 100);
-      raf = requestAnimationFrame(step);
+  // Sliding highlight: follows hover, rests on the active link
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = itemRefs.current[targetIdx];
+      if (!el) {
+        setPill((p) => ({ ...p, ready: false }));
+        return;
+      }
+      setPill({ left: el.offsetLeft, width: el.offsetWidth, ready: true });
     };
-
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const nameChars = "Vishwa Nadeen".split("");
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [targetIdx]);
 
   return (
     <>
+    {/* Scroll progress: pinned to the very top of the screen, away from the navbar outline */}
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-x-0 top-0 z-[10000] h-[3px]"
+    >
+      <div
+        className="h-full origin-left bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 shadow-[0_0_10px_rgba(34,211,238,0.7)]"
+        style={{ transform: `scaleX(${progress})` }}
+      />
+    </div>
+    <header
+      className={[
+        "fixed inset-x-0 top-4 z-[9999] flex justify-center",
+        "transition-transform duration-500 ease-[cubic-bezier(.22,.8,.5,1)] motion-reduce:transition-none",
+        hidden && !mobileOpen ? "-translate-y-[140%]" : "translate-y-0",
+      ].join(" ")}
+    >
       <style>{`
         @keyframes letter-drop {
           from { opacity:0; transform:translateY(-14px) rotate(-4deg); }
           to   { opacity:1; transform:translateY(0)     rotate(0deg);  }
         }
-        @keyframes nav-slide {
-          from { opacity:0; transform:translateY(-10px); }
-          to   { opacity:1; transform:translateY(0);     }
-        }
-        @keyframes pill-breathe {
-          0%,100% { box-shadow:0 0 0 0 rgba(34,211,238,0); }
-          50%     { box-shadow:0 0 16px 3px rgba(34,211,238,0.18); }
-        }
-        @keyframes border-glow {
-          0%,100% { opacity:0.35; }
-          50%     { opacity:0.9;  }
-        }
-        @keyframes nav-glow-move {
-          0%   { transform: translateX(-120%); opacity: 0; }
-          20%  { opacity: 1; }
-          80%  { opacity: 1; }
-          100% { transform: translateX(120%); opacity: 0; }
-        }
-        @keyframes nav-float {
-          0%,100% { transform: translateY(0); }
-          50%     { transform: translateY(-1px); }
-        }
-
         .nav-letter {
           display:inline-block;
           animation:letter-drop 0.5s cubic-bezier(.22,.8,.5,1) both;
         }
-        .nav-link {
-          opacity:0;
-          animation:nav-slide 0.45s cubic-bezier(.22,.8,.5,1) both;
+        @property --nav-angle {
+          syntax: '<angle>';
+          initial-value: 0deg;
+          inherits: true;
         }
-        .active-pill {
-          animation:pill-breathe 3s ease-in-out infinite;
+        @keyframes nav-border-spin {
+          to { --nav-angle: 360deg; }
         }
-        .border-glow-line {
-          animation:border-glow 4s ease-in-out infinite;
-        }
-        .nav-hover-bg {
-          position:absolute;
-          inset:0;
-          border-radius:0.75rem;
-          background:linear-gradient(135deg, rgba(34,211,238,0.10), rgba(59,130,246,0.08));
-          opacity:0;
-          transform:scale(0.92);
-          transition:opacity 0.2s ease, transform 0.2s cubic-bezier(.22,.8,.5,1);
-          pointer-events:none;
-        }
-        .nav-item-wrap:hover .nav-hover-bg {
-          opacity:1;
-          transform:scale(1);
-        }
-        .navbar-shell {
-          animation: nav-float 6s ease-in-out infinite;
-        }
-        .navbar-shell::before {
-          content:"";
-          position:absolute;
-          inset:-1px;
-          border-radius:1rem;
-          padding:1px;
-          background:linear-gradient(
-            120deg,
-            rgba(34,211,238,0.18),
-            rgba(59,130,246,0.10),
-            rgba(129,140,248,0.16),
-            rgba(34,211,238,0.18)
+        .nav-frame {
+          background: conic-gradient(
+            from var(--nav-angle),
+            rgba(34,211,238,0.12) 0%,
+            rgba(34,211,238,1) 10%,
+            rgba(129,140,248,1) 22%,
+            rgba(34,211,238,0.12) 38%,
+            rgba(255,255,255,0.10) 68%,
+            rgba(34,211,238,0.12) 100%
           );
-          -webkit-mask:
-            linear-gradient(#fff 0 0) content-box,
-            linear-gradient(#fff 0 0);
-          -webkit-mask-composite:xor;
-          mask-composite:exclude;
-          pointer-events:none;
+          animation: nav-border-spin 5s linear infinite;
         }
-        .navbar-shine {
-          position:absolute;
-          top:0;
-          bottom:0;
-          width:35%;
-          background:linear-gradient(
-            90deg,
-            transparent,
-            rgba(255,255,255,0.08),
-            transparent
+        .nav-frame-glow {
+          background: conic-gradient(
+            from var(--nav-angle),
+            transparent 0%,
+            rgba(34,211,238,0.9) 10%,
+            rgba(129,140,248,0.9) 22%,
+            transparent 38%,
+            transparent 100%
           );
-          animation: nav-glow-move 7s ease-in-out infinite;
-          pointer-events:none;
+          filter: blur(16px);
+          opacity: 0.55;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .nav-letter { animation:none; }
+          .nav-frame { animation:none; }
         }
       `}</style>
+      <div className="relative w-[92%] max-w-6xl">
+        {/* Main bar */}
+        <div
+          className={[
+            "nav-frame relative rounded-2xl p-[1.5px] transition-shadow duration-300",
+            scrolled
+              ? "shadow-[0_16px_50px_rgba(0,0,0,0.6)]"
+              : "shadow-[0_8px_30px_rgba(0,0,0,0.4)]",
+          ].join(" ")}
+        >
+        <span
+          aria-hidden
+          className="nav-frame-glow pointer-events-none absolute inset-0 rounded-2xl"
+        />
+        <nav
+          aria-label="Main"
+          className="relative flex h-14 items-center justify-between overflow-hidden rounded-[14.5px] bg-slate-950 px-3 sm:px-4"
+        >
+          {/* Logo */}
+          <Link
+            href="/"
+            className="shrink-0 no-underline"
+            aria-label="Vishwa Nadeen — home"
+          >
+            <span className="inline-block text-base font-bold tracking-[0.03em] sm:text-[1.125rem]">
+              {nameChars.map((ch, i) => {
+                const pos = (i / (nameChars.length - 1)) * 100;
+                const glow = Math.max(0, 1 - Math.abs(pos - shimPos) / 35);
+                const r = Math.round(203 + (34 - 203) * glow);
+                const g = Math.round(213 + (211 - 213) * glow);
+                const b = Math.round(225 + (238 - 225) * glow);
+                return (
+                  <span
+                    key={i}
+                    className="nav-letter"
+                    style={{
+                      animationDelay: `${i * 38}ms`,
+                      color: `rgb(${r},${g},${b})`,
+                      textShadow:
+                        glow > 0.4
+                          ? `0 0 ${Math.round(glow * 12)}px rgba(34,211,238,${(
+                              glow * 0.6
+                            ).toFixed(2)})`
+                          : "none",
+                    }}
+                  >
+                    {ch === " " ? "\u00A0" : ch}
+                  </span>
+                );
+              })}
+            </span>
+          </Link>
 
-      <header
-        className={[
-          "navbar-shell fixed top-4 left-1/2 z-[9999] w-[92%] max-w-6xl -translate-x-1/2 overflow-hidden rounded-2xl backdrop-blur-2xl transition-all duration-300",
-          scrolled
-            ? "border border-cyan-400/20 bg-slate-950/90 shadow-[0_20px_60px_rgba(0,0,0,0.75),0_0_40px_rgba(34,211,238,0.10)]"
-            : "border border-slate-800/70 bg-slate-950/90 shadow-[0_12px_40px_rgba(0,0,0,0.55)]",
-        ].join(" ")}
-      >
-        <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-cyan-400/[0.03]" />
-        <div className="navbar-shine" />
-        <div className="absolute top-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent blur-sm" />
-        <div className="border-glow-line absolute bottom-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent blur-[1px]" />
+          {/* Desktop links with sliding highlight */}
+          <div
+            className="relative hidden items-center rounded-xl border border-white/5 bg-white/[0.03] p-1 sm:flex"
+            onMouseLeave={() => setHovered(null)}
+          >
+            <span
+              aria-hidden
+              className="absolute bottom-1 top-1 rounded-lg bg-gradient-to-br from-cyan-400/20 to-indigo-500/20 ring-1 ring-cyan-400/25 transition-[left,width,opacity] duration-300 ease-[cubic-bezier(.22,.8,.5,1)] motion-reduce:transition-none"
+              style={{
+                left: pill.left,
+                width: pill.width,
+                opacity: pill.ready ? 1 : 0,
+              }}
+            />
+            {navItems.map((item, idx) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  ref={(el) => {
+                    itemRefs.current[idx] = el;
+                  }}
+                  aria-current={active ? "page" : undefined}
+                  onMouseEnter={() => setHovered(idx)}
+                  onFocus={() => setHovered(idx)}
+                  onBlur={() => setHovered(null)}
+                  className={[
+                    "relative z-10 rounded-lg px-4 py-1.5 text-sm font-medium transition-colors duration-200",
+                    active || hovered === idx
+                      ? "text-white"
+                      : "text-slate-400",
+                  ].join(" ")}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
 
-        <nav className="relative z-10 w-full">
-          <div className="flex min-h-16 w-full items-center justify-between px-4 py-3 md:px-8">
-            <Link href="/" className="shrink-0 no-underline">
-              <span className="inline-block text-base font-bold tracking-[0.03em] sm:text-[1.125rem]">
-                {nameChars.map((ch, i) => {
-                  const pos = (i / (nameChars.length - 1)) * 100;
-                  const dist = Math.abs(pos - shimPos);
-                  const glow = Math.max(0, 1 - dist / 35);
-
-                  const r = Math.round(203 + (34 - 203) * glow);
-                  const g = Math.round(213 + (211 - 213) * glow);
-                  const b = Math.round(225 + (238 - 225) * glow);
-
-                  return (
-                    <span
-                      key={i}
-                      className="nav-letter"
-                      style={{
-                        animationDelay: `${i * 38}ms`,
-                        color: `rgb(${r},${g},${b})`,
-                        textShadow:
-                          glow > 0.4
-                            ? `0 0 ${Math.round(glow * 12)}px rgba(34,211,238,${(
-                                glow * 0.6
-                              ).toFixed(2)})`
-                            : "none",
-                      }}
-                    >
-                      {ch === " " ? "\u00A0" : ch}
-                    </span>
-                  );
-                })}
-              </span>
-            </Link>
-
-            <CenterDecoration />
-
+          {/* Right side: CTA + mobile toggle */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               aria-label="Toggle navigation menu"
-              onClick={() => setMobileOpen((prev) => !prev)}
-              className="relative z-20 flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-400/20 bg-slate-900/70 text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.10)] transition hover:bg-slate-800/80 sm:hidden"
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((p) => !p)}
+              className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition hover:bg-white/10 sm:hidden"
             >
-              <span className="relative flex h-4 w-5 flex-col justify-between">
+              <span className="relative block h-4 w-5">
                 <span
                   className={[
-                    "h-0.5 w-full rounded-full bg-cyan-200 transition",
-                    mobileOpen ? "translate-y-[7px] rotate-45" : "",
+                    "absolute left-0 h-0.5 w-full rounded-full bg-current transition-all duration-300",
+                    mobileOpen ? "top-[7px] rotate-45" : "top-0",
                   ].join(" ")}
                 />
                 <span
                   className={[
-                    "h-0.5 w-full rounded-full bg-cyan-200 transition",
+                    "absolute left-0 top-[7px] h-0.5 w-full rounded-full bg-current transition-opacity duration-200",
                     mobileOpen ? "opacity-0" : "opacity-100",
                   ].join(" ")}
                 />
                 <span
                   className={[
-                    "h-0.5 w-full rounded-full bg-cyan-200 transition",
-                    mobileOpen ? "-translate-y-[7px] -rotate-45" : "",
+                    "absolute left-0 h-0.5 w-full rounded-full bg-current transition-all duration-300",
+                    mobileOpen ? "top-[7px] -rotate-45" : "top-[14px]",
                   ].join(" ")}
                 />
               </span>
             </button>
+          </div>
 
-            <div className="hidden items-center justify-end gap-1 sm:flex">
-              {navItems.map((item, idx) => {
-                const active =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname?.startsWith(item.href);
+        </nav>
+        </div>
 
+        {/* Mobile sheet */}
+        <div
+          className={[
+            "grid transition-all duration-300 sm:hidden",
+            mobileOpen
+              ? "mt-2 grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0",
+          ].join(" ")}
+        >
+          <div className="overflow-hidden rounded-2xl">
+            <div className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-slate-950/90 p-2 shadow-[0_16px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+              {navItems.map((item) => {
+                const active = isActive(item.href);
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="nav-link nav-item-wrap relative rounded-xl px-4 py-2 text-sm font-medium"
-                    style={{
-                      color: active ? "#fff" : "#cbd5e1",
-                      animationDelay: `${500 + idx * 80}ms`,
-                    }}
-                    onMouseEnter={() => setHoveredIdx(idx)}
-                    onMouseLeave={() => setHoveredIdx(null)}
+                    aria-current={active ? "page" : undefined}
+                    className={[
+                      "flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                      active
+                        ? "bg-gradient-to-br from-cyan-400/15 to-indigo-500/15 text-white ring-1 ring-cyan-400/20"
+                        : "text-slate-300 hover:bg-white/5",
+                    ].join(" ")}
                   >
-                    <span className="nav-hover-bg" />
-
+                    {item.label}
                     {active && (
-                      <span className="active-pill absolute inset-0 -z-10 rounded-xl bg-gradient-to-br from-blue-500/18 to-cyan-400/15" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]" />
                     )}
-
-                    <span className="relative z-10">{item.label}</span>
-
-                    {active && (
-                      <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                    )}
-
-                    <span
-                      className="absolute bottom-1 left-1/2 h-[1.5px] -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-60 transition-[width] duration-[250ms]"
-                      style={{
-                        width: hoveredIdx === idx && !active ? "60%" : "0%",
-                      }}
-                    />
                   </Link>
                 );
               })}
             </div>
           </div>
-
-          <div
-            className={[
-              "grid transition-all duration-300 sm:hidden",
-              mobileOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-            ].join(" ")}
-          >
-            <div className="overflow-hidden">
-              <div className="flex flex-col gap-1 px-4 pb-4 pt-1">
-                {navItems.map((item, idx) => {
-                  const active =
-                    item.href === "/"
-                      ? pathname === "/"
-                      : pathname?.startsWith(item.href);
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="nav-link nav-item-wrap relative rounded-xl px-4 py-3 text-sm font-medium"
-                      style={{
-                        color: active ? "#fff" : "#cbd5e1",
-                        animationDelay: `${150 + idx * 70}ms`,
-                      }}
-                    >
-                      <span className="nav-hover-bg" />
-
-                      {active && (
-                        <span className="active-pill absolute inset-0 -z-10 rounded-xl bg-gradient-to-br from-blue-500/18 to-cyan-400/15" />
-                      )}
-
-                      <span className="relative z-10">{item.label}</span>
-
-                      {active && (
-                        <span className="absolute right-4 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </nav>
-      </header>
+        </div>
+      </div>
+    </header>
     </>
   );
 }

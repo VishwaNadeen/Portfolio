@@ -46,7 +46,7 @@ export default async function HomePage() {
 
       <BackgroundAnimation />
 
-      <div className="relative z-10 mx-auto max-w-5xl space-y-10 px-4 pb-8 pt-28 sm:space-y-12 sm:pb-10 sm:pt-30 md:space-y-14 md:pb-12 md:pt-32">
+      <div className="relative z-10 mx-auto max-w-6xl space-y-10 px-4 pb-8 pt-28 sm:space-y-12 sm:pb-10 sm:pt-30 md:space-y-14 md:pb-12 md:pt-32">
         <div className="space-y-12 sm:space-y-16 md:space-y-20 lg:space-y-25">
           <HeroSection />
           <Social3DIcons />
@@ -55,7 +55,7 @@ export default async function HomePage() {
         <TechStackStrip />
         <LiveStatsSection stats={stats} />
 
-        {/* <GithubLanguages /> */}
+        <GithubLanguages />
 
         <FeaturedProjects featured={featured} />
       </div>
