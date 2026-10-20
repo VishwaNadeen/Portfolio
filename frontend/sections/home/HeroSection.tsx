@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import profile from "@/data/profile";
 
@@ -44,14 +44,14 @@ function AnimatedName({ name }: { name: string }) {
   return (
     <span className="group relative inline-block cursor-default select-none">
       {/* base gradient text + soft glow on hover */}
-      <span className="animate-[gradientMove_6s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 bg-[length:200%_200%] bg-clip-text text-transparent transition-[filter] duration-300 group-hover:[filter:drop-shadow(0_0_14px_rgba(34,211,238,0.5))]">
+      <span className="animate-[gradientMove_6s_linear_infinite] bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400 bg-[length:200%_200%] bg-clip-text text-transparent transition-[filter] duration-300 group-hover:drop-shadow-[0_0_14px_rgba(34,211,238,0.5)]">
         {name}
       </span>
 
       {/* light sweep, clipped to the letters */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgba(255,255,255,0.85)_50%,transparent_65%)] [background-position:150%_0] [background-size:250%_100%] bg-clip-text text-transparent opacity-0 group-hover:animate-[sweep_0.9s_ease-out] group-hover:opacity-100 motion-reduce:hidden"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgba(255,255,255,0.85)_50%,transparent_65%)] bg-[position:150%_0] bg-[length:250%_100%] bg-clip-text text-transparent opacity-0 group-hover:animate-[sweep_0.9s_ease-out] group-hover:opacity-100 motion-reduce:hidden"
       >
         {name}
       </span>
@@ -133,22 +133,66 @@ function GitHubAvatar({
   useEffect(() => {
     setMounted(true);
     if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) setLoaded(true);
-  }, []);
 
-  const show = () => {
+    // Warm up the large popup image so the first open doesn't wait on download/decode
+    const big = new Image();
+    big.src = `https://github.com/${username}.png?size=640`;
+    big.decode?.().catch(() => {});
+  }, [username]);
+
+  // popup size + the point it grows out of (the small photo's center)
+  const measure = useCallback(() => {
     const el = triggerRef.current;
-    if (!el) return;
+    if (!el) return null;
     const r = el.getBoundingClientRect();
     const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
     const size = Math.min(window.innerWidth * 0.8, viewportHeight * 0.7, 380);
     const left = (window.innerWidth - size) / 2;
     const top = (viewportHeight - size) / 2;
-    // popup grows out of the small photo's position
-    setGeo({
+    return {
       size,
       ox: r.left + r.width / 2 - left,
       oy: r.top + r.height / 2 - top,
-    });
+    };
+  }, []);
+
+  // Keep the popup geometry up to date while it is closed (and invisible), so the very
+  // first open doesn't also animate width / height / transform-origin from the defaults.
+  useEffect(() => {
+    if (!mounted || open) return;
+    let frame = 0;
+    const sync = () => {
+      frame = 0;
+      const g = measure();
+      if (!g) return;
+      setGeo((p) =>
+        Math.abs(p.size - g.size) < 0.5 &&
+        Math.abs(p.ox - g.ox) < 0.5 &&
+        Math.abs(p.oy - g.oy) < 0.5
+          ? p
+          : g
+      );
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(sync);
+    };
+    sync();
+    const settle = window.setTimeout(sync, 1300); // after the intro animations finish
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.clearTimeout(settle);
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [mounted, open, measure]);
+
+  const show = () => {
+    const g = measure();
+    if (!g) return;
+    // popup grows out of the small photo's position
+    setGeo(g);
     setOpen(true);
   };
   const hide = () => setOpen(false);
@@ -243,7 +287,7 @@ function GitHubAvatar({
             {/* blurred backdrop */}
             <div
               aria-hidden
-              className={`pointer-events-none fixed inset-0 z-[100] bg-slate-950/50 backdrop-blur-md transition-opacity duration-500 ease-out motion-reduce:transition-none ${
+              className={`pointer-events-none fixed inset-0 z-[100] bg-slate-950/50 backdrop-blur-md transition-opacity duration-500 ease-out will-change-[opacity] motion-reduce:transition-none ${
                 open ? "opacity-100" : "opacity-0"
               }`}
             />
@@ -254,7 +298,7 @@ function GitHubAvatar({
               className="pointer-events-none fixed inset-0 z-[101] flex items-center justify-center"
             >
               <div
-                className={`relative transition-all duration-500 ease-[cubic-bezier(.22,.8,.5,1)] motion-reduce:transition-none ${
+                className={`relative transition-all duration-500 ease-[cubic-bezier(.22,.8,.5,1)] will-change-[transform,opacity,filter] motion-reduce:transition-none ${
                   open ? "scale-100 opacity-100 blur-0" : "scale-[0.25] opacity-0 blur-sm"
                 }`}
                 style={{
@@ -350,6 +394,7 @@ export default function HeroSection() {
 
   return (
     <>
+      {/* Keyframes can't be written inline with Tailwind classes, so they stay as CSS */}
       <style>{`
         @keyframes rise {
           from { opacity: 0; transform: translateY(28px); }
@@ -390,7 +435,7 @@ export default function HeroSection() {
         {/* dot grid, faded toward the edges */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(rgba(148,163,184,0.25)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(148,163,184,0.25)_1px,transparent_1px)] bg-[length:22px_22px] opacity-40 [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]"
         />
 
         {/* mouse-parallax glows */}
