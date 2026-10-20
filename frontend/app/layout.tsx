@@ -27,9 +27,23 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
-      { url: "/favicon.ico" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      {
+        url: "/favicon-96x96.png",
+        sizes: "96x96",
+        type: "image/png",
+      },
+      {
+        url: "/favicon-16x16.png",
+        sizes: "16x16",
+        type: "image/png",
+      },
+      {
+        url: "/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
     ],
     apple: "/apple-touch-icon.png",
     shortcut: "/favicon.ico",
@@ -47,7 +61,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Vishwa Nadeen Portfolio",
@@ -60,7 +74,7 @@ export const metadata: Metadata = {
     title: "Vishwa Nadeen",
     description:
       "Explore projects and development work by Vishwa Nadeen.",
-    images: ["/og-image.jpg"],
+    images: ["/og-image.png"],
   },
 
   robots: {
