@@ -23,16 +23,24 @@ export default function Navbar() {
   const progressBarRef = useRef<HTMLDivElement | null>(null);
   const scrollFrame = useRef<number | null>(null);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
   const nameChars = "Vishwa Nadeen".split("");
 
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const lastY = useRef(0);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : !!pathname?.startsWith(href);
 
   const activeIdx = navItems.findIndex((i) => isActive(i.href));
   const targetIdx = hovered ?? activeIdx;
+
+  // Name intro: flip once after first paint so the Tailwind transitions play.
+  useEffect(() => {
+    const id = window.setTimeout(() => setIntroDone(true), 30);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Name shimmer sweep: update letter styles directly to avoid a React render every frame.
   useEffect(() => {
@@ -83,6 +91,20 @@ export default function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  // Close the mobile menu when tapping / clicking anywhere outside the navbar
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setMobileOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [mobileOpen]);
 
   // Scroll: update the progress line without rerendering the whole navbar on every scroll event.
   useEffect(() => {
@@ -155,14 +177,6 @@ export default function Navbar() {
       ].join(" ")}
     >
       <style>{`
-        @keyframes letter-drop {
-          from { opacity:0; transform:translateY(-14px) rotate(-4deg); }
-          to   { opacity:1; transform:translateY(0)     rotate(0deg);  }
-        }
-        .nav-letter {
-          display:inline-block;
-          animation:letter-drop 0.5s cubic-bezier(.22,.8,.5,1) both;
-        }
         @property --nav-angle {
           syntax: '<angle>';
           initial-value: 0deg;
@@ -192,18 +206,12 @@ export default function Navbar() {
             transparent 38%,
             transparent 100%
           );
-          filter: blur(16px);
-          opacity: 0.55;
-        }
-        @media (max-width: 639px) {
-          .nav-frame-glow { filter: blur(8px); opacity: 0.35; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .nav-letter { animation:none; }
           .nav-frame { animation:none; }
         }
       `}</style>
-      <div className="relative w-[92%] max-w-6xl">
+      <div ref={containerRef} className="relative w-[92%] max-w-6xl">
         {/* Main bar */}
         <div
           className={[
@@ -215,7 +223,7 @@ export default function Navbar() {
         >
         <span
           aria-hidden
-          className="nav-frame-glow pointer-events-none absolute inset-0 rounded-2xl"
+          className="nav-frame-glow pointer-events-none absolute inset-0 rounded-2xl opacity-[0.55] blur-[16px] max-sm:opacity-[0.35] max-sm:blur-[8px]"
         />
         <nav
           aria-label="Main"
@@ -228,18 +236,21 @@ export default function Navbar() {
             aria-label="Vishwa Nadeen — home"
           >
             <span className="inline-block text-base font-bold tracking-[0.03em] sm:text-[1.125rem]">
-              {nameChars.map((ch, i) => {
-                return (
-                  <span
-                    key={i}
-                    ref={(el) => { nameLetterRefs.current[i] = el; }}
-                    className="nav-letter"
-                    style={{ animationDelay: `${i * 38}ms` }}
-                  >
-                    {ch === " " ? "\u00A0" : ch}
-                  </span>
-                );
-              })}
+              {nameChars.map((ch, i) => (
+                <span
+                  key={i}
+                  ref={(el) => { nameLetterRefs.current[i] = el; }}
+                  className={[
+                    "inline-block transition-[opacity,transform,filter] duration-700 ease-[cubic-bezier(.22,.8,.5,1)] motion-reduce:transition-none",
+                    introDone
+                      ? "translate-y-0 scale-100 opacity-100 blur-none"
+                      : "translate-y-4 scale-75 opacity-0 blur-sm",
+                  ].join(" ")}
+                  style={{ transitionDelay: `${i * 45}ms` }}
+                >
+                  {ch === " " ? "\u00A0" : ch}
+                </span>
+              ))}
             </span>
           </Link>
 
