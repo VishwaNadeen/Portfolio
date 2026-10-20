@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Vishwa Nadeen" }],
   creator: "Vishwa Nadeen",
   metadataBase: new URL("https://www.vishwanadeen.lk"),
+  alternates: {
+    canonical: "/",
+  },
 
   icons: {
     icon: [
