@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  CSSProperties,
   FormEvent,
+  KeyboardEvent as ReactKeyboardEvent,
   ReactNode,
   useEffect,
   useLayoutEffect,
@@ -49,7 +49,19 @@ const INITIAL_FORM: FormData = {
 };
 
 const MAX_MESSAGE_LENGTH = 1000;
+// Keep in sync with the 340ms in the closing animation classes below.
 const CLOSE_DURATION_MS = 340;
+// A visible-area shrink bigger than this means the phone keyboard is open.
+const KEYBOARD_THRESHOLD_PX = 150;
+
+/* Animation classes (same values as before, now as Tailwind classes).
+   The matching @keyframes stay in the <style> block below. */
+const FRAME_OPEN =
+  "animate-[contact-win-open_520ms_cubic-bezier(.34,1.22,.64,1)_backwards,contact-fade-in_200ms_ease-out_backwards]";
+const FRAME_CLOSE =
+  "animate-[contact-win-close_340ms_cubic-bezier(.5,0,.75,0)_both,contact-fade-out_340ms_linear_both]";
+const BACKDROP_OPEN = "animate-[contact-backdrop-in_320ms_ease-out_backwards]";
+const BACKDROP_CLOSE = "animate-[contact-backdrop-out_340ms_ease-in_both]";
 
 // Avoids the "useLayoutEffect does nothing on the server" warning during SSR.
 const useIsoLayoutEffect =
@@ -58,7 +70,7 @@ const useIsoLayoutEffect =
 type Social = {
   name: string;
   href: string;
-  background: string; // real app-icon background
+  bg: string; // real app-icon background (Tailwind class)
   Icon: IconType;
 };
 
@@ -66,44 +78,56 @@ const SOCIALS: Social[] = [
   {
     name: "WhatsApp",
     href: "https://wa.me/94715688517?text=Hello%20Vishwa%2C%20I%20want%20to%20connect%20with%20you.",
-    background: "linear-gradient(160deg, #3DDC6B, #1FAF4B)",
+    bg: "bg-[linear-gradient(160deg,#3DDC6B,#1FAF4B)]",
     Icon: FaWhatsapp,
   },
   {
     name: "LinkedIn",
     href: SOCIAL_LINKS.linkedin,
-    background: "linear-gradient(160deg, #1D87D6, #0A66C2)",
+    bg: "bg-[linear-gradient(160deg,#1D87D6,#0A66C2)]",
     Icon: FaLinkedinIn,
   },
   {
     name: "Instagram",
     href: SOCIAL_LINKS.instagram,
-    background:
-      "radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)",
+    bg: "bg-[radial-gradient(circle_at_30%_107%,#fdf497_0%,#fdf497_5%,#fd5949_45%,#d6249f_60%,#285AEB_90%)]",
     Icon: FaInstagram,
   },
   {
     name: "Facebook",
     href: SOCIAL_LINKS.facebook,
-    background: "linear-gradient(160deg, #2D8CFF, #1877F2)",
+    bg: "bg-[linear-gradient(160deg,#2D8CFF,#1877F2)]",
     Icon: FaFacebookF,
   },
   {
     name: "Telegram",
     href: SOCIAL_LINKS.telegram,
-    background: "linear-gradient(160deg, #2AABEE, #229ED9)",
+    bg: "bg-[linear-gradient(160deg,#2AABEE,#229ED9)]",
     Icon: FaTelegram,
   },
 ];
 
 function inputClass(hasError: boolean) {
   return [
-    "w-full rounded-xl border bg-white/[0.04] py-3 pl-11 pr-4 text-sm text-white outline-none transition",
+    // text-base on phones: iOS Safari zooms the whole page when an input is
+    // smaller than 16px, which breaks the layout.
+    "w-full rounded-xl border bg-white/[0.04] py-3 pl-11 pr-4 text-base text-white outline-none transition sm:text-sm",
     "placeholder:text-slate-600 focus:bg-white/[0.06] focus:ring-2",
     hasError
       ? "border-red-400/50 focus:border-red-400 focus:ring-red-400/10"
       : "border-white/10 focus:border-cyan-400/60 focus:ring-cyan-400/10",
   ].join(" ");
+}
+
+// On phones the keyboard's "next" key jumps to the following field instead of
+// submitting the form early. Desktop keeps its normal Enter behavior.
+function onEnterNext(next: { current: HTMLElement | null }) {
+  return (event: ReactKeyboardEvent) => {
+    if (event.key !== "Enter") return;
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+    event.preventDefault();
+    next.current?.focus();
+  };
 }
 
 function Field({
@@ -157,6 +181,7 @@ export default function FloatingContact() {
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
@@ -166,12 +191,19 @@ export default function FloatingContact() {
   const isAboutPage = pathname === "/about";
 
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
   const buttonCenter = useRef({ x: 0, y: 0 });
+  const lockRef = useRef({ x: 0, y: 0 });
+  const keyboardRef = useRef(false);
+  const baseRef = useRef({ w: 0, h: 0 });
 
   const mounted = phase !== "closed";
   const isOpen = phase === "open";
+  const closing = phase === "closing";
   const sent = feedback?.type === "success";
 
   /* ---------- macOS-style open / close ---------- */
@@ -189,10 +221,12 @@ export default function FloatingContact() {
   // so it grows out of (and shrinks back into) the button like a Dock icon.
   function applyOrigin() {
     const el = frameRef.current;
-    if (!el) return;
-    el.style.transformOrigin = `${buttonCenter.current.x - el.offsetLeft}px ${
-      buttonCenter.current.y - el.offsetTop
-    }px`;
+    const wrap = wrapperRef.current;
+    if (!el || !wrap) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    el.style.transformOrigin = `${
+      buttonCenter.current.x - wrapRect.left - el.offsetLeft
+    }px ${buttonCenter.current.y - wrapRect.top - el.offsetTop}px`;
   }
 
   function openPopup() {
@@ -202,6 +236,10 @@ export default function FloatingContact() {
 
   function closePopup() {
     if (submitting || phase !== "open") return;
+    // Put the phone keyboard away before the window shrinks into the button.
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     captureButtonCenter();
     applyOrigin();
     setPhase("closing");
@@ -235,13 +273,87 @@ export default function FloatingContact() {
     return () => root.removeAttribute("data-contact-open");
   }, [phase]);
 
+  /* ---------- follow the visible area (phone keyboard) ----------
+     On phones the keyboard covers the bottom of the page without resizing it.
+     The window is therefore sized to the visual viewport, so it always sits
+     right above the keyboard and nothing is hidden behind it. */
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const vv = window.visualViewport;
+    const wrap = wrapperRef.current;
+    if (!vv || !wrap) return;
+
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const doc = document.documentElement;
+
+      // New width = rotation: forget the old "full height".
+      const width = Math.round(vv.width);
+      if (baseRef.current.w !== width) baseRef.current = { w: width, h: 0 };
+      baseRef.current.h = Math.max(
+        baseRef.current.h,
+        doc.clientHeight,
+        vv.height
+      );
+
+      // Pinch-zoomed page: leave the normal full-screen layout alone.
+      if (vv.scale > 1.01) {
+        wrap.style.removeProperty("--vv-top");
+        wrap.style.removeProperty("--vv-bottom");
+        keyboardRef.current = false;
+        setKeyboardOpen(false);
+        return;
+      }
+
+      const top = Math.max(0, vv.offsetTop);
+      const bottom = Math.max(0, doc.clientHeight - top - vv.height);
+      wrap.style.setProperty("--vv-top", `${top}px`);
+      wrap.style.setProperty("--vv-bottom", `${bottom}px`);
+
+      const open = baseRef.current.h - vv.height > KEYBOARD_THRESHOLD_PX;
+      keyboardRef.current = open;
+      setKeyboardOpen(open);
+    };
+
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+
+    update();
+    vv.addEventListener("resize", schedule);
+    vv.addEventListener("scroll", schedule);
+
+    return () => {
+      vv.removeEventListener("resize", schedule);
+      vv.removeEventListener("scroll", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+      keyboardRef.current = false;
+      setKeyboardOpen(false);
+    };
+  }, [mounted]);
+
+  // Keep the field you are typing in visible when the keyboard opens.
+  useEffect(() => {
+    if (!keyboardOpen) return;
+    const timer = window.setTimeout(() => {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && frameRef.current?.contains(active)) {
+        active.scrollIntoView({ block: "nearest" });
+      }
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [keyboardOpen]);
+
   /* ---------- stop page scrolling (scrollbar stays visible, no layout shift) ---------- */
 
   useEffect(() => {
     if (!mounted) return;
 
-    const lockX = window.scrollX;
-    const lockY = window.scrollY;
+    lockRef.current = { x: window.scrollX, y: window.scrollY };
 
     const insideWindow = (target: EventTarget | null) =>
       target instanceof Node && !!frameRef.current?.contains(target);
@@ -268,11 +380,15 @@ export default function FloatingContact() {
     };
 
     // Catches everything else, e.g. dragging the scrollbar thumb.
+    // Skipped while the phone keyboard is open: the browser scrolls the page
+    // itself then, and fighting it makes the screen jump.
     const keepPosition = () => {
-      if (window.scrollX !== lockX || window.scrollY !== lockY) {
+      if (keyboardRef.current) return;
+      const { x, y } = lockRef.current;
+      if (window.scrollX !== x || window.scrollY !== y) {
         window.scrollTo({
-          left: lockX,
-          top: lockY,
+          left: x,
+          top: y,
           behavior: "instant" as ScrollBehavior,
         });
       }
@@ -291,6 +407,19 @@ export default function FloatingContact() {
     };
   }, [mounted]);
 
+  // When the keyboard closes, put the page back where it was.
+  useEffect(() => {
+    if (!mounted || keyboardOpen) return;
+    const { x, y } = lockRef.current;
+    if (window.scrollX !== x || window.scrollY !== y) {
+      window.scrollTo({
+        left: x,
+        top: y,
+        behavior: "instant" as ScrollBehavior,
+      });
+    }
+  }, [keyboardOpen, mounted]);
+
   /* ---------- Escape + autofocus ---------- */
 
   useEffect(() => {
@@ -304,8 +433,12 @@ export default function FloatingContact() {
 
     window.addEventListener("keydown", handleKeyDown);
 
+    // Autofocus only with a mouse. On a phone it would pop the keyboard up
+    // over the window while it is still opening.
     const focusTimer = window.setTimeout(() => {
-      firstInputRef.current?.focus({ preventScroll: true });
+      if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+        firstInputRef.current?.focus({ preventScroll: true });
+      }
     }, 380);
 
     return () => {
@@ -413,15 +546,8 @@ export default function FloatingContact() {
 
   // Only transform + opacity are animated (GPU-composited), and each has a single
   // keyframe interval, so the motion is one continuous curve with no speed jumps.
-  const frameAnimation =
-    phase === "closing"
-      ? `contact-win-close ${CLOSE_DURATION_MS}ms cubic-bezier(.5,0,.75,0) both, contact-fade-out ${CLOSE_DURATION_MS}ms linear both`
-      : "contact-win-open 520ms cubic-bezier(.34,1.22,.64,1) backwards, contact-fade-in 200ms ease-out backwards";
-
-  const backdropAnimation =
-    phase === "closing"
-      ? `contact-backdrop-out ${CLOSE_DURATION_MS}ms ease-in both`
-      : "contact-backdrop-in 320ms ease-out backwards";
+  const frameAnimation = closing ? FRAME_CLOSE : FRAME_OPEN;
+  const backdropAnimation = closing ? BACKDROP_CLOSE : BACKDROP_OPEN;
 
   return (
     <>
@@ -473,55 +599,6 @@ export default function FloatingContact() {
           0%, 100% { box-shadow: 0 0 0 0 rgba(34,211,238,.35), 0 10px 30px rgba(8,145,178,.30); }
           50%      { box-shadow: 0 0 0 10px rgba(34,211,238,0), 0 10px 30px rgba(8,145,178,.40); }
         }
-        .contact-backdrop {
-          background: rgba(2, 6, 23, 0.7);
-          -webkit-backdrop-filter: blur(8px);
-          backdrop-filter: blur(8px);
-        }
-        /* Browsers without backdrop-filter get a slightly darker tint instead */
-        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-          .contact-backdrop { background: rgba(2, 6, 23, 0.88); }
-        }
-
-        .contact-frame {
-          position: relative;
-          overflow: hidden;
-          isolation: isolate;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          background: rgba(34, 211, 238, 0.25);
-        }
-        .contact-frame::before {
-          content: "";
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          width: calc(100% + 100vh);
-          width: calc(100% + 100dvh);
-          aspect-ratio: 1 / 1;
-          transform: translate(-50%, -50%) rotate(0deg);
-          background: conic-gradient(
-            from 0deg,
-            rgba(34,211,238,0.10) 0%,
-            rgba(34,211,238,0.95) 10%,
-            rgba(129,140,248,0.95) 22%,
-            rgba(34,211,238,0.10) 38%,
-            rgba(255,255,255,0.08) 70%,
-            rgba(34,211,238,0.10) 100%
-          );
-          animation: contact-border-rotate 6s linear infinite;
-          pointer-events: none;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .contact-motion {
-            animation: none !important;
-            transition: none !important;
-          }
-          .contact-frame,
-          .contact-frame::before {
-            animation: none !important;
-          }
-        }
       `}</style>
 
       {/* Floating contact button */}
@@ -532,33 +609,33 @@ export default function FloatingContact() {
         aria-label="Open contact form"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className="contact-motion group fixed right-4 z-[80] flex h-14 w-14 items-center justify-center gap-2.5 rounded-full border border-cyan-200/30 bg-gradient-to-br from-cyan-400 via-cyan-600 to-indigo-600 text-white transition duration-300 hover:-translate-y-1 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:right-7 sm:w-auto sm:pl-4 sm:pr-5"
-        style={{
-          bottom: isAboutPage
-            ? "calc(5.5rem + env(safe-area-inset-bottom))"
-            : "calc(1.25rem + env(safe-area-inset-bottom))",
-          transition: "bottom 350ms ease-out, transform 300ms",
+        className={`group fixed right-4 z-[80] flex h-14 w-14 touch-manipulation items-center justify-center gap-2.5 rounded-full border border-cyan-200/30 bg-gradient-to-br from-cyan-400 via-cyan-600 to-indigo-600 text-white [-webkit-tap-highlight-color:transparent] [transition:bottom_350ms_ease-out,transform_300ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 motion-reduce:animate-none motion-reduce:transition-none sm:right-7 sm:w-auto sm:pl-4 sm:pr-5 [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:scale-105 ${
+          isAboutPage
+            ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]"
+            : "bottom-[calc(1.25rem+env(safe-area-inset-bottom))]"
+        } ${
           // Pause the pulse while the popup is up: it only costs frames behind the backdrop
-          animation: mounted
-            ? "none"
-            : "contact-button-pulse 3s ease-in-out infinite",
-        }}
+          mounted
+            ? "animate-none"
+            : "animate-[contact-button-pulse_3s_ease-in-out_infinite]"
+        }`}
       >
         <MessageCircle
           size={24}
           strokeWidth={1.9}
-          className="transition-transform duration-300 group-hover:-rotate-6"
+          className="transition-transform duration-300 [@media(hover:hover)]:group-hover:-rotate-6"
         />
         <span className="hidden text-sm font-semibold sm:inline">
           Let&apos;s talk
         </span>
       </button>
 
-      {/* Modal */}
+      {/* Modal: sized to the visible area, so the phone keyboard never covers it */}
       {mounted && (
         <div
-          className={`fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-5 ${
-            phase === "closing" ? "pointer-events-none" : ""
+          ref={wrapperRef}
+          className={`fixed inset-x-0 bottom-[var(--vv-bottom,0px)] top-[var(--vv-top,0px)] z-[100] flex items-end justify-center sm:items-center sm:p-5 ${
+            closing ? "pointer-events-none" : ""
           }`}
           onMouseDown={(event) => {
             if (!frameRef.current?.contains(event.target as Node)) {
@@ -569,15 +646,13 @@ export default function FloatingContact() {
           {/* Backdrop layer: only its opacity is animated */}
           <div
             aria-hidden="true"
-            className="contact-backdrop contact-motion absolute inset-0"
-            style={{ animation: backdropAnimation }}
+            className={`absolute inset-0 bg-slate-950/70 backdrop-blur-[8px] [@supports_not_((backdrop-filter:blur(1px))_or_(-webkit-backdrop-filter:blur(1px)))]:bg-slate-950/90 motion-reduce:animate-none ${backdropAnimation}`}
           />
 
           {/* Animated outline frame */}
           <div
             ref={frameRef}
-            className="contact-frame contact-motion flex max-h-[92dvh] w-full max-w-lg rounded-t-3xl p-px shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[90dvh] sm:rounded-3xl"
-            style={{ animation: frameAnimation }}
+            className={`relative isolate flex max-h-[92%] w-full max-w-lg overflow-hidden rounded-t-3xl bg-cyan-400/25 p-px shadow-[0_20px_60px_rgba(0,0,0,0.55)] [-webkit-backface-visibility:hidden] [backface-visibility:hidden] before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:aspect-square before:w-[calc(100%+100vh)] before:animate-[contact-border-rotate_6s_linear_infinite] before:bg-[conic-gradient(from_0deg,rgba(34,211,238,0.10)_0%,rgba(34,211,238,0.95)_10%,rgba(129,140,248,0.95)_22%,rgba(34,211,238,0.10)_38%,rgba(255,255,255,0.08)_70%,rgba(34,211,238,0.10)_100%)] before:content-[''] before:[transform:translate(-50%,-50%)_rotate(0deg)] motion-reduce:animate-none motion-reduce:before:animate-none sm:max-h-[90%] sm:rounded-3xl ${frameAnimation}`}
           >
             <div
               role="dialog"
@@ -595,8 +670,12 @@ export default function FloatingContact() {
                 className="pointer-events-none absolute -bottom-32 -left-24 size-64 rounded-full bg-indigo-500/10 blur-3xl"
               />
 
-              {/* Header */}
-              <div className="relative flex items-start justify-between gap-4 px-5 pb-4 pt-5 sm:px-7 sm:pt-6">
+              {/* Header (a bit more compact while the keyboard is open) */}
+              <div
+                className={`relative flex items-start justify-between gap-4 px-5 sm:px-7 sm:pb-4 sm:pt-6 ${
+                  keyboardOpen ? "pb-2 pt-3" : "pb-4 pt-5"
+                }`}
+              >
                 <div className="flex min-w-0 items-center gap-3.5">
                   <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 text-slate-950 shadow-[0_0_24px_rgba(34,211,238,0.35)]">
                     <MessageCircle size={23} strokeWidth={2.2} />
@@ -609,7 +688,11 @@ export default function FloatingContact() {
                     >
                       Let&apos;s talk
                     </h2>
-                    <p className="mt-0.5 text-sm leading-5 text-slate-400">
+                    <p
+                      className={`mt-0.5 text-sm leading-5 text-slate-400 ${
+                        keyboardOpen ? "hidden sm:block" : ""
+                      }`}
+                    >
                       Have a project or an idea? Send me a message.
                     </p>
                   </div>
@@ -620,26 +703,20 @@ export default function FloatingContact() {
                   onClick={closePopup}
                   disabled={submitting}
                   aria-label="Close contact form"
-                  className="grid size-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:opacity-40"
+                  className="grid size-9 shrink-0 touch-manipulation place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white disabled:opacity-40 [@media(pointer:coarse)]:size-11"
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Scrollable content */}
-              <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 pt-1 sm:px-7">
+              <div className="relative min-h-0 flex-1 scroll-py-4 overflow-y-auto overscroll-contain px-5 pb-5 pt-1 sm:px-7">
                 {sent ? (
                   <div
                     role="status"
                     className="flex flex-col items-center gap-3 py-8 text-center"
                   >
-                    <div
-                      className="contact-motion grid size-16 place-items-center rounded-full bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/30"
-                      style={{
-                        animation:
-                          "contact-pop 500ms cubic-bezier(.22,.8,.5,1) both",
-                      }}
-                    >
+                    <div className="grid size-16 animate-[contact-pop_500ms_cubic-bezier(.22,.8,.5,1)_both] place-items-center rounded-full bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/30 motion-reduce:animate-none">
                       <CheckCircle2 size={34} />
                     </div>
                     <h3 className="text-lg font-semibold text-white">
@@ -651,7 +728,7 @@ export default function FloatingContact() {
                     <button
                       type="button"
                       onClick={() => setFeedback(null)}
-                      className="mt-2 inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/[0.08]"
+                      className="mt-2 inline-flex touch-manipulation items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/[0.08]"
                     >
                       Send another message
                       <ArrowUpRight size={14} />
@@ -671,6 +748,16 @@ export default function FloatingContact() {
 
                     <form
                       onSubmit={handleSubmit}
+                      onFocus={(event) => {
+                        // Already typing with the keyboard open: bring the
+                        // newly focused field into view.
+                        if (!keyboardRef.current) return;
+                        const target = event.target as HTMLElement;
+                        window.setTimeout(
+                          () => target.scrollIntoView({ block: "nearest" }),
+                          60
+                        );
+                      }}
                       noValidate
                       className="space-y-4"
                     >
@@ -683,11 +770,15 @@ export default function FloatingContact() {
                         <input
                           ref={firstInputRef}
                           id="floating-contact-name"
+                          name="name"
                           type="text"
                           autoComplete="name"
+                          autoCapitalize="words"
+                          enterKeyHint="next"
                           maxLength={100}
                           value={form.name}
                           onChange={(e) => updateField("name", e.target.value)}
+                          onKeyDown={onEnterNext(emailRef)}
                           placeholder="Your name"
                           aria-invalid={!!errors.name}
                           aria-describedby={
@@ -706,14 +797,22 @@ export default function FloatingContact() {
                         error={errors.email}
                       >
                         <input
+                          ref={emailRef}
                           id="floating-contact-email"
+                          name="email"
                           type="email"
+                          inputMode="email"
                           autoComplete="email"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          enterKeyHint="next"
                           maxLength={254}
                           value={form.email}
                           onChange={(e) =>
                             updateField("email", e.target.value)
                           }
+                          onKeyDown={onEnterNext(messageRef)}
                           placeholder="you@example.com"
                           aria-invalid={!!errors.email}
                           aria-describedby={
@@ -744,8 +843,11 @@ export default function FloatingContact() {
                         }
                       >
                         <textarea
+                          ref={messageRef}
                           id="floating-contact-message"
+                          name="message"
                           rows={4}
+                          enterKeyHint="enter"
                           maxLength={MAX_MESSAGE_LENGTH}
                           value={form.message}
                           onChange={(e) =>
@@ -767,7 +869,7 @@ export default function FloatingContact() {
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_10px_30px_-10px_rgba(34,211,238,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="group flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_10px_30px_-10px_rgba(34,211,238,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {submitting ? (
                           <>
@@ -792,25 +894,29 @@ export default function FloatingContact() {
                 )}
               </div>
 
-              {/* Quick connect: real app icons, pinned to the bottom */}
-              <div className="relative border-t border-white/[0.08] bg-white/[0.02] px-5 pb-4 pt-3.5 sm:px-7">
+              {/* Quick connect: real app icons, pinned to the bottom
+                  (hidden while the keyboard is open to leave room for the form) */}
+              <div
+                className={`relative border-t border-white/[0.08] bg-white/[0.02] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3.5 sm:px-7 ${
+                  keyboardOpen ? "hidden" : ""
+                }`}
+              >
                 <p className="mb-3 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">
                   Quick connect
                 </p>
 
                 <div className="grid grid-cols-5 gap-2">
-                  {SOCIALS.map(({ name, href, background, Icon }) => (
+                  {SOCIALS.map(({ name, href, bg, Icon }) => (
                     <a
                       key={name}
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={name}
-                      className="group/app flex flex-col items-center gap-1.5 focus-visible:outline-none"
+                      className="group/app flex touch-manipulation flex-col items-center gap-1.5 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none"
                     >
                       <span
-                        className="grid size-12 place-items-center rounded-[14px] text-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-black/20 transition duration-200 ease-out group-hover/app:-translate-y-1.5 group-hover/app:scale-110 group-focus-visible/app:ring-2 group-focus-visible/app:ring-cyan-300"
-                        style={{ background } as CSSProperties}
+                        className={`grid size-11 place-items-center rounded-[14px] text-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-black/20 transition duration-200 ease-out group-focus-visible/app:ring-2 group-focus-visible/app:ring-cyan-300 min-[360px]:size-12 [@media(hover:hover)]:group-hover/app:-translate-y-1.5 [@media(hover:hover)]:group-hover/app:scale-110 ${bg}`}
                       >
                         <Icon size={22} />
                       </span>
