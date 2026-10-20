@@ -9,14 +9,31 @@ function useMouse() {
   const [pos, setPos] = useState({ x: 0.5, y: 0.5 });
 
   useEffect(() => {
+    // Parallax is only useful on devices with a precise mouse/trackpad.
+    // Avoid unnecessary listeners and React updates on touch-first devices.
+    const pointerQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (!pointerQuery.matches) return;
+
+    let frame = 0;
+    let latestX = 0.5;
+    let latestY = 0.5;
+
     const handler = (e: MouseEvent) => {
-      setPos({
-        x: e.clientX / window.innerWidth,
-        y: e.clientY / window.innerHeight,
+      latestX = e.clientX / Math.max(window.innerWidth, 1);
+      latestY = e.clientY / Math.max(window.innerHeight, 1);
+
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        setPos({ x: latestX, y: latestY });
+        frame = 0;
       });
     };
+
     window.addEventListener("mousemove", handler, { passive: true });
-    return () => window.removeEventListener("mousemove", handler);
+    return () => {
+      window.removeEventListener("mousemove", handler);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   return pos;
@@ -64,20 +81,35 @@ function RotatingRole() {
   }, []);
 
   return (
-    <p className="flex flex-wrap items-center gap-x-2 text-base font-medium text-slate-300 sm:text-lg md:text-xl">
+    <p className="flex flex-wrap items-start gap-x-2 text-base font-medium text-slate-300 sm:text-lg md:text-xl">
       <span className="text-slate-500">I build</span>
-      <span
-        key={i}
-        className="animate-[swap_0.5s_cubic-bezier(.22,.8,.5,1)_both] text-cyan-300 motion-reduce:animate-none"
-      >
-        {ROLES[i]}
+
+      {/* Reserves the size of the longest phrase so layout (and the avatar) never shifts */}
+      <span className="relative inline-grid min-w-0">
+        {ROLES.map((role) => (
+          <span
+            key={role}
+            aria-hidden
+            className="invisible col-start-1 row-start-1 select-none"
+          >
+            {role}
+          </span>
+        ))}
+
+        {/* Visible phrase, overlaid; same animation as before */}
+        <span
+          key={i}
+          className="absolute inset-0 animate-[swap_0.5s_cubic-bezier(.22,.8,.5,1)_both] text-cyan-300 motion-reduce:animate-none"
+        >
+          {ROLES[i]}
+        </span>
       </span>
     </p>
   );
 }
 
 /* GitHub avatar: pop-in, blur-up load, float, spinning ring, glow, parallax.
-   Hover (mouse) / tap (touch) / focus -> enlarged popup over a blurred backdrop. */
+   Hover (mouse) / tap (touch) / keyboard focus -> enlarged popup over a blurred backdrop. */
 function GitHubAvatar({
   username,
   className = "",
@@ -107,9 +139,10 @@ function GitHubAvatar({
     const el = triggerRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const size = Math.min(window.innerWidth * 0.8, window.innerHeight * 0.7, 380);
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const size = Math.min(window.innerWidth * 0.8, viewportHeight * 0.7, 380);
     const left = (window.innerWidth - size) / 2;
-    const top = (window.innerHeight - size) / 2;
+    const top = (viewportHeight - size) / 2;
     // popup grows out of the small photo's position
     setGeo({
       size,
@@ -154,13 +187,15 @@ function GitHubAvatar({
         onPointerEnter={(e) => e.pointerType === "mouse" && show()}
         onPointerLeave={(e) => e.pointerType === "mouse" && hide()}
         onPointerUp={(e) => e.pointerType !== "mouse" && (open ? hide() : show())}
-        onFocus={show}
+        // Only open on keyboard focus. On touch, a tap also focuses the element,
+        // which would open and then instantly close the popup.
+        onFocus={(e) => e.currentTarget.matches(":focus-visible") && show()}
         onBlur={hide}
-        className={`cursor-zoom-in rounded-full outline-none transition-transform duration-300 ease-out focus-visible:ring-2 focus-visible:ring-cyan-300 ${className}`}
+        className={`cursor-zoom-in touch-manipulation rounded-full outline-none [-webkit-tap-highlight-color:transparent] transition-transform duration-300 ease-out focus-visible:ring-2 focus-visible:ring-cyan-300 ${className}`}
         style={{ transform: `translate(${px}px, ${py}px)` }}
       >
         <div className="group relative size-full animate-[pop_0.8s_cubic-bezier(.22,.8,.5,1)_0.4s_both] opacity-0 motion-reduce:animate-none motion-reduce:opacity-100">
-          <div className="size-full animate-[float_5s_ease-in-out_infinite] transition-transform duration-500 group-hover:scale-105 motion-reduce:animate-none">
+          <div className="size-full transform-gpu animate-[float_5s_ease-in-out_infinite] transition-transform duration-500 group-hover:scale-105 motion-reduce:animate-none">
             {/* pulsing glow */}
             <div
               aria-hidden
@@ -170,7 +205,7 @@ function GitHubAvatar({
             {/* rotating gradient ring */}
             <div
               aria-hidden
-              className="pointer-events-none absolute -inset-[3px] animate-[spin_6s_linear_infinite] rounded-full bg-[conic-gradient(from_0deg,#22d3ee,#3b82f6,transparent_60%,#22d3ee)] motion-reduce:animate-none"
+              className="pointer-events-none absolute -inset-[3px] transform-gpu animate-[spin_6s_linear_infinite] rounded-full bg-[conic-gradient(from_0deg,#22d3ee,#3b82f6,transparent_60%,#22d3ee)] motion-reduce:animate-none"
             />
 
             {/* image */}
@@ -371,25 +406,25 @@ export default function HeroSection() {
         {/* ── content ── */}
         <div className="relative grid items-center gap-8 md:gap-10 lg:grid-cols-[1.15fr_0.85fr]">
           {/* left: heading + avatar (right of the name), then paragraph */}
-          <div className="animate-[rise_0.65s_cubic-bezier(.22,.8,.5,1)_0.1s_both] space-y-6 opacity-0 md:space-y-7">
-            <div className="flex items-center gap-4 sm:gap-6 md:gap-8">
+          <div className="min-w-0 animate-[rise_0.65s_cubic-bezier(.22,.8,.5,1)_0.1s_both] space-y-6 opacity-0 md:space-y-7">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-6 md:gap-8">
               {/* greeting (smaller), name (large, never wraps), role */}
               <div className="min-w-0 space-y-3">
                 <h1 className="font-bold tracking-tight text-white">
                   <span className="mb-1 block text-lg font-medium text-slate-300 sm:text-xl md:text-2xl">
                     Hi, I&apos;m
                   </span>
-                  <span className="block whitespace-nowrap text-2xl sm:text-4xl md:text-5xl lg:text-4xl xl:text-5xl 2xl:text-6xl">
+                  <span className="block whitespace-nowrap text-[clamp(1.125rem,6vw,1.5rem)] sm:text-4xl md:text-5xl lg:text-4xl xl:text-5xl 2xl:text-6xl">
                     <AnimatedName name="Vishwa Nadeen" />
                   </span>
                 </h1>
                 <RotatingRole />
               </div>
 
-              {/* avatar on the right of the name */}
+              {/* avatar on the right of the name (fixed size, never shrinks) */}
               <GitHubAvatar
                 username={profile.githubUsername}
-                className="size-16 shrink-0 sm:size-24 md:size-28 2xl:size-32"
+                className="size-12 shrink-0 min-[360px]:size-14 sm:size-24 md:size-28 2xl:size-32"
                 px={px * 0.25}
                 py={py * 0.25}
               />
