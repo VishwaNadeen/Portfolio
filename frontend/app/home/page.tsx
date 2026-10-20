@@ -52,7 +52,7 @@ export default async function HomePage() {
           <Social3DIcons />
         </div>
 
-        
+        <TechStackStrip />
         <LiveStatsSection stats={stats} />
 
         <GithubLanguages />
