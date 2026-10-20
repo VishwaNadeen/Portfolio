@@ -42,6 +42,13 @@ function useInView(threshold = 0.2) {
     const element = ref.current;
     if (!element) return;
 
+    // Very old browsers / webviews without IntersectionObserver:
+    // show the content instead of leaving it hidden forever.
+    if (typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -181,41 +188,53 @@ function PlatformCard({
   active: boolean;
   accent: "cyan" | "red";
 }) {
+  // Hover effects only apply on devices that can really hover (mouse/trackpad),
+  // so they never get "stuck" after a tap on phones and tablets.
   const accentStyles =
     accent === "cyan"
       ? {
           icon: "border-cyan-400/20 bg-cyan-400/10",
-          hover: "group-hover:border-cyan-400/30",
+          hover:
+            "[@media(hover:hover)]:group-hover:border-cyan-400/30",
           link: "text-cyan-300 hover:text-cyan-200",
           glow: "bg-cyan-400/5",
         }
       : {
           icon: "border-red-400/20 bg-red-400/10",
-          hover: "group-hover:border-red-400/30",
+          hover:
+            "[@media(hover:hover)]:group-hover:border-red-400/30",
           link: "text-red-300 hover:text-red-200",
           glow: "bg-red-400/5",
         };
 
+  // 3 stats per row (YouTube) need a smaller, fluid number size on narrow
+  // screens so values like "99,999" never overflow their column.
+  const dense = rows.length > 2;
+  const valueSize = dense
+    ? "text-[clamp(1rem,5.2vw,1.5rem)] leading-8 sm:text-3xl md:text-2xl lg:text-3xl"
+    : "text-2xl sm:text-3xl";
+
   return (
     <article
-      className={`group relative isolate overflow-hidden rounded-2xl border border-white/[0.09] bg-slate-900/45 p-5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-[transform,border-color,background-color,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:bg-slate-900/70 hover:shadow-[0_16px_40px_rgba(0,0,0,0.22)] motion-reduce:transform-none motion-reduce:transition-none sm:p-6 ${accentStyles.hover}`}
+      className={`group relative isolate overflow-hidden rounded-2xl border border-white/[0.09] bg-slate-900/45 p-5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-[transform,border-color,background-color,box-shadow] duration-300 ease-out [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:bg-slate-900/70 [@media(hover:hover)]:hover:shadow-[0_16px_40px_rgba(0,0,0,0.22)] motion-reduce:transform-none motion-reduce:transition-none sm:p-6 ${accentStyles.hover}`}
     >
-      {/* Subtle hover glow */}
+      {/* Subtle hover glow (hidden on touch devices: it only shows on hover,
+          so there is no reason to render a large blur layer there) */}
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute -right-16 -top-16 -z-10 size-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100 ${accentStyles.glow}`}
+        className={`pointer-events-none absolute -right-16 -top-16 -z-10 hidden size-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 [@media(hover:hover)]:block [@media(hover:hover)]:group-hover:opacity-100 ${accentStyles.glow}`}
       />
 
       {/* Platform heading */}
       <div className="flex min-w-0 items-center gap-3">
         <span
-          className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none ${accentStyles.icon}`}
+          className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105 motion-reduce:transform-none ${accentStyles.icon}`}
         >
           {icon}
         </span>
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-white sm:text-lg">
+          <h3 className="truncate text-base font-semibold text-white sm:text-lg">
             {name}
           </h3>
 
@@ -224,7 +243,7 @@ function PlatformCard({
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className={`block truncate text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${accentStyles.link}`}
+              className={`-my-1 block truncate rounded-sm py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${accentStyles.link}`}
             >
               {handle}
               <span className="ml-1" aria-hidden="true">↗</span>
@@ -246,7 +265,7 @@ function PlatformCard({
         {rows.map((row) => (
           <div key={row.label} className="min-w-0">
             <dd
-              className={`text-2xl font-bold tracking-tight tabular-nums sm:text-3xl ${
+              className={`font-bold tracking-tight tabular-nums ${valueSize} ${
                 live ? "text-white" : "text-slate-600"
               }`}
             >
@@ -257,7 +276,7 @@ function PlatformCard({
               )}
             </dd>
 
-            <dt className="mt-1 text-xs leading-5 text-slate-400 sm:text-sm">
+            <dt className="mt-1 break-words text-xs leading-5 text-slate-400 sm:text-sm">
               {row.label}
             </dt>
           </div>
@@ -273,7 +292,7 @@ function PlatformCard({
       {/* Bottom accent */}
       <div
         aria-hidden="true"
-        className={`mt-5 h-px w-full origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100 ${
+        className={`mt-5 h-px w-full origin-left scale-x-0 transition-transform duration-500 [@media(hover:hover)]:group-hover:scale-x-100 ${
           accent === "cyan" ? "bg-cyan-400/40" : "bg-red-400/40"
         }`}
       />
@@ -336,7 +355,7 @@ export default function LiveStatsSection({ stats }: Props) {
       <section
         ref={ref}
         aria-labelledby="live-stats-heading"
-        className="space-y-5 sm:space-y-6"
+        className="min-w-0 space-y-5 sm:space-y-6"
       >
         {/* Section heading */}
         <div
@@ -360,11 +379,11 @@ export default function LiveStatsSection({ stats }: Props) {
           }`}
         >
           <div
-            className={
+            className={`min-w-0 ${
               visible
                 ? "animate-[activity-enter_650ms_cubic-bezier(.22,.8,.5,1)_150ms_both]"
                 : ""
-            }
+            }`}
           >
             <PlatformCard
               icon={<GitHubIcon />}
@@ -388,11 +407,11 @@ export default function LiveStatsSection({ stats }: Props) {
           </div>
 
           <div
-            className={
+            className={`min-w-0 ${
               visible
                 ? "animate-[activity-enter_650ms_cubic-bezier(.22,.8,.5,1)_300ms_both]"
                 : ""
-            }
+            }`}
           >
             <PlatformCard
               icon={<YouTubeIcon />}
