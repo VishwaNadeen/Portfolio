@@ -16,11 +16,12 @@ export default function Navbar() {
 
   const [hidden, setHidden] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hovered, setHovered] = useState<number | null>(null);
   const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
-  const [shimPos, setShimPos] = useState(0);
+  const nameLetterRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const progressBarRef = useRef<HTMLDivElement | null>(null);
+  const scrollFrame = useRef<number | null>(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const nameChars = "Vishwa Nadeen".split("");
 
@@ -33,20 +34,37 @@ export default function Navbar() {
   const activeIdx = navItems.findIndex((i) => isActive(i.href));
   const targetIdx = hovered ?? activeIdx;
 
-  // Name shimmer sweep
+  // Name shimmer sweep: update letter styles directly to avoid a React render every frame.
   useEffect(() => {
     if (popupOpen) return; // pause while the "Let's talk" popup is open
-    let raf: number;
+    let raf = 0;
     let start: number | null = null;
+    let lastPaint = 0;
     const duration = 4000;
     const step = (ts: number) => {
-      if (start === null) start = ts;
-      setShimPos((((ts - start) % duration) / duration) * 100);
+      // 30fps is visually smooth for this decorative effect and lighter on mobile devices.
+      if (ts - lastPaint >= 1000 / 30) {
+        if (start === null) start = ts;
+        const shimPos = (((ts - start) % duration) / duration) * 100;
+        nameLetterRefs.current.forEach((el, i) => {
+          if (!el) return;
+          const pos = (i / Math.max(1, nameChars.length - 1)) * 100;
+          const glow = Math.max(0, 1 - Math.abs(pos - shimPos) / 35);
+          const r = Math.round(203 + (34 - 203) * glow);
+          const g = Math.round(213 + (211 - 213) * glow);
+          const b = Math.round(225 + (238 - 225) * glow);
+          el.style.color = `rgb(${r},${g},${b})`;
+          el.style.textShadow = glow > 0.4
+            ? `0 0 ${Math.round(glow * 12)}px rgba(34,211,238,${(glow * 0.6).toFixed(2)})`
+            : "none";
+        });
+        lastPaint = ts;
+      }
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [popupOpen]);
+  }, [popupOpen, nameChars.length]);
 
   // Slide away (same hide animation) while the "Let's talk" popup is open
   useEffect(() => {
@@ -66,22 +84,33 @@ export default function Navbar() {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Scroll: compact style, hide on scroll down / show on scroll up, progress line
+  // Scroll: update the progress line without rerendering the whole navbar on every scroll event.
   useEffect(() => {
     const onScroll = () => {
-      const y = window.scrollY;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollFrame.current !== null) return;
+      scrollFrame.current = window.requestAnimationFrame(() => {
+        scrollFrame.current = null;
+        const y = window.scrollY;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const nextProgress = max > 0 ? Math.min(1, y / max) : 0;
 
-      setScrolled(y > 12);
-      setProgress(max > 0 ? Math.min(1, y / max) : 0);
+        if (progressBarRef.current) {
+          progressBarRef.current.style.transform = `scaleX(${nextProgress})`;
+        }
+        setScrolled((value) => value !== (y > 12) ? y > 12 : value);
 
-      if (y > lastY.current && y > 140) setHidden(true);
-      else if (y < lastY.current) setHidden(false);
-      lastY.current = y;
+        if (y > lastY.current && y > 140) setHidden((value) => value ? value : true);
+        else if (y < lastY.current) setHidden((value) => value ? false : value);
+        lastY.current = y;
+      });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (scrollFrame.current !== null) cancelAnimationFrame(scrollFrame.current);
+      scrollFrame.current = null;
+    };
   }, []);
 
   // Sliding highlight: follows hover, rests on the active link
@@ -111,8 +140,9 @@ export default function Navbar() {
       ].join(" ")}
     >
       <div
+        ref={progressBarRef}
         className="h-full origin-left bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 shadow-[0_0_10px_rgba(34,211,238,0.7)]"
-        style={{ transform: `scaleX(${progress})` }}
+        style={{ transform: "scaleX(0)" }}
       />
     </div>
     <header
@@ -165,6 +195,9 @@ export default function Navbar() {
           filter: blur(16px);
           opacity: 0.55;
         }
+        @media (max-width: 639px) {
+          .nav-frame-glow { filter: blur(8px); opacity: 0.35; }
+        }
         @media (prefers-reduced-motion: reduce) {
           .nav-letter { animation:none; }
           .nav-frame { animation:none; }
@@ -196,25 +229,12 @@ export default function Navbar() {
           >
             <span className="inline-block text-base font-bold tracking-[0.03em] sm:text-[1.125rem]">
               {nameChars.map((ch, i) => {
-                const pos = (i / (nameChars.length - 1)) * 100;
-                const glow = Math.max(0, 1 - Math.abs(pos - shimPos) / 35);
-                const r = Math.round(203 + (34 - 203) * glow);
-                const g = Math.round(213 + (211 - 213) * glow);
-                const b = Math.round(225 + (238 - 225) * glow);
                 return (
                   <span
                     key={i}
+                    ref={(el) => { nameLetterRefs.current[i] = el; }}
                     className="nav-letter"
-                    style={{
-                      animationDelay: `${i * 38}ms`,
-                      color: `rgb(${r},${g},${b})`,
-                      textShadow:
-                        glow > 0.4
-                          ? `0 0 ${Math.round(glow * 12)}px rgba(34,211,238,${(
-                              glow * 0.6
-                            ).toFixed(2)})`
-                          : "none",
-                    }}
+                    style={{ animationDelay: `${i * 38}ms` }}
                   >
                     {ch === " " ? "\u00A0" : ch}
                   </span>
