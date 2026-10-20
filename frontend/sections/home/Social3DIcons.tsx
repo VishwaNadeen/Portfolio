@@ -197,7 +197,7 @@ export default function Social3DIcons() {
                 <div className="peer h-[58px] w-[58px] [perspective:280px] sm:h-16 sm:w-16 sm:[perspective:300px] md:h-[72px] md:w-[72px] md:[perspective:320px]">
                   {/* cube: 3D spin */}
                   <div
-                    className={`relative h-full w-full will-change-transform [transform-style:preserve-3d] motion-reduce:animate-none ${
+                    className={`relative h-full w-full animate-[cube-spin_6s_linear_infinite] will-change-transform [transform-style:preserve-3d] motion-reduce:animate-none ${
                       paused ? "[animation-play-state:paused]" : ""
                     }`}
                   >
