@@ -1,112 +1,160 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FaGithub,
   FaLinkedin,
   FaInstagram,
   FaYoutube,
   FaFacebook,
+  FaWhatsapp,
 } from "react-icons/fa";
 import { FaTelegram, FaTiktok } from "react-icons/fa6";
 import { SOCIAL_LINKS } from "@/data/socialLinks";
 
+/* Tailwind only generates classes it can read as complete strings in the
+   source, so each cube's colors and entry delay are written out in full.
+   text = icon color, bg = face color, glow = shadow color under the cube. */
 const socials = [
   {
     name: "GitHub",
     icon: <FaGithub size={28} />,
     link: SOCIAL_LINKS.github,
-    color: "#e2e8f0",
-    bg: "#1e293b",
+    text: "text-[#e2e8f0]",
+    bg: "bg-[#1e293b]",
+    glow: "bg-[#e2e8f0]",
+    entry: "animate-[cube-entry_0.6s_cubic-bezier(.22,.8,.5,1)_0s_backwards]",
   },
   {
     name: "LinkedIn",
     icon: <FaLinkedin size={28} />,
     link: SOCIAL_LINKS.linkedin,
-    color: "#0a66c2",
-    bg: "#0a1628",
+    text: "text-[#0a66c2]",
+    bg: "bg-[#0a1628]",
+    glow: "bg-[#0a66c2]",
+    entry: "animate-[cube-entry_0.6s_cubic-bezier(.22,.8,.5,1)_0.08s_backwards]",
   },
   {
     name: "Instagram",
     icon: <FaInstagram size={28} />,
     link: SOCIAL_LINKS.instagram,
-    color: "#e1306c",
-    bg: "#2d0a1a",
+    text: "text-[#e1306c]",
+    bg: "bg-[#2d0a1a]",
+    glow: "bg-[#e1306c]",
+    entry: "animate-[cube-entry_0.6s_cubic-bezier(.22,.8,.5,1)_0.16s_backwards]",
   },
   {
     name: "YouTube",
     icon: <FaYoutube size={28} />,
     link: SOCIAL_LINKS.youtube,
-    color: "#ff0000",
-    bg: "#2d0000",
+    text: "text-[#ff0000]",
+    bg: "bg-[#2d0000]",
+    glow: "bg-[#ff0000]",
+    entry: "animate-[cube-entry_0.6s_cubic-bezier(.22,.8,.5,1)_0.24s_backwards]",
   },
   {
     name: "Facebook",
     icon: <FaFacebook size={28} />,
     link: SOCIAL_LINKS.facebook,
-    color: "#1877f2",
-    bg: "#0a1f3d",
+    text: "text-[#1877f2]",
+    bg: "bg-[#0a1f3d]",
+    glow: "bg-[#1877f2]",
+    entry: "animate-[cube-entry_0.6s_cubic-bezier(.22,.8,.5,1)_0.32s_backwards]",
   },
   {
     name: "TikTok",
     icon: <FaTiktok size={28} />,
     link: SOCIAL_LINKS.tiktok,
-    color: "#ee1d52",
-    bg: "#2a0d1a",
+    text: "text-[#ee1d52]",
+    bg: "bg-[#2a0d1a]",
+    glow: "bg-[#ee1d52]",
+    entry: "animate-[cube-entry_0.6s_cubic-bezier(.22,.8,.5,1)_0.4s_backwards]",
   },
   {
     name: "Telegram",
     icon: <FaTelegram size={28} />,
     link: SOCIAL_LINKS.telegram,
-    color: "#229ed9",
-    bg: "#0a2233",
+    text: "text-[#229ed9]",
+    bg: "bg-[#0a2233]",
+    glow: "bg-[#229ed9]",
+    entry: "animate-[cube-entry_0.6s_cubic-bezier(.22,.8,.5,1)_0.48s_backwards]",
+  },
+  {
+    name: "WhatsApp",
+    icon: <FaWhatsapp size={28} />,
+    link: SOCIAL_LINKS.whatsapp,
+    text: "text-[#25d366]",
+    bg: "bg-[#0a2415]",
+    glow: "bg-[#25d366]",
+    entry: "animate-[cube-entry_0.6s_cubic-bezier(.22,.8,.5,1)_0.56s_backwards]",
   },
 ];
 
+const FACES = [
+  {
+    key: "front",
+    pos: "[transform:translateZ(29px)] sm:[transform:translateZ(32px)] md:[transform:translateZ(36px)]",
+    shade: "",
+  },
+  {
+    key: "back",
+    pos: "[transform:rotateY(180deg)_translateZ(29px)] sm:[transform:rotateY(180deg)_translateZ(32px)] md:[transform:rotateY(180deg)_translateZ(36px)]",
+    shade: "",
+  },
+  {
+    key: "left",
+    pos: "[transform:rotateY(-90deg)_translateZ(29px)] sm:[transform:rotateY(-90deg)_translateZ(32px)] md:[transform:rotateY(-90deg)_translateZ(36px)]",
+    shade: "bg-[linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.3))]",
+  },
+  {
+    key: "right",
+    pos: "[transform:rotateY(90deg)_translateZ(29px)] sm:[transform:rotateY(90deg)_translateZ(32px)] md:[transform:rotateY(90deg)_translateZ(36px)]",
+    shade: "bg-[linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.3))]",
+  },
+  {
+    key: "top",
+    pos: "[transform:rotateX(90deg)_translateZ(29px)] sm:[transform:rotateX(90deg)_translateZ(32px)] md:[transform:rotateX(90deg)_translateZ(36px)]",
+    shade: "bg-[linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.45))]",
+  },
+  {
+    key: "bottom",
+    pos: "[transform:rotateX(-90deg)_translateZ(29px)] sm:[transform:rotateX(-90deg)_translateZ(32px)] md:[transform:rotateX(-90deg)_translateZ(36px)]",
+    shade: "bg-[linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55))]",
+  },
+];
+
+const FACE_BASE =
+  "absolute flex h-[58px] w-[58px] flex-col items-center justify-center gap-1 rounded-xl border border-white/[0.08] before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:bg-[linear-gradient(135deg,rgba(255,255,255,0.12)_0%,transparent_60%)] before:content-[''] sm:h-16 sm:w-16 sm:rounded-[13px] md:h-[72px] md:w-[72px] md:rounded-[14px]";
+
+/* Tracks whether the section is on screen (with a small margin) so the
+   spinning can pause when it is not: off-screen cubes cost nothing. */
+function useOnScreen(rootMargin = "120px") {
+  const ref = useRef<HTMLElement>(null);
+  const [onScreen, setOnScreen] = useState(true);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setOnScreen(entry.isIntersecting),
+      { rootMargin }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [rootMargin]);
+
+  return { ref, onScreen };
+}
+
 export default function Social3DIcons() {
   const [hovered, setHovered] = useState<string | null>(null);
+  const { ref, onScreen } = useOnScreen();
 
   return (
     <>
       <style>{`
-        /* ── cube wrapper ── */
-        .cube-scene {
-          width: 58px;
-          height: 58px;
-          perspective: 280px;
-        }
-
-        @media (min-width: 640px) {
-          .cube-scene {
-            width: 64px;
-            height: 64px;
-            perspective: 300px;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .cube-scene {
-            width: 72px;
-            height: 72px;
-            perspective: 320px;
-          }
-        }
-
-        .cube {
-          width: 100%;
-          height: 100%;
-          position: relative;
-          transform-style: preserve-3d;
-          animation: cube-spin 6s linear infinite;
-          transition: animation-play-state 0.3s;
-        }
-
-        .cube.paused {
-          animation-play-state: paused;
-          transform: rotateX(-18deg) rotateY(25deg);
-          transition: transform 0.5s cubic-bezier(.22,.8,.5,1);
-        }
-
         @keyframes cube-spin {
           0%   { transform: rotateX(0deg)   rotateY(0deg);   }
           25%  { transform: rotateX(-15deg) rotateY(90deg);  }
@@ -115,193 +163,63 @@ export default function Social3DIcons() {
           100% { transform: rotateX(0deg)   rotateY(360deg); }
         }
 
-        /* ── six faces ── */
-        .face {
-          position: absolute;
-          width: 58px;
-          height: 58px;
-          border-radius: 12px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          backface-visibility: visible;
-          border: 1px solid rgba(255,255,255,0.08);
-          overflow: hidden;
-        }
-
-        @media (min-width: 640px) {
-          .face {
-            width: 64px;
-            height: 64px;
-            border-radius: 13px;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .face {
-            width: 72px;
-            height: 72px;
-            border-radius: 14px;
-          }
-        }
-
-        .face::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
-          pointer-events: none;
-        }
-
-        .face-front  { transform: translateZ(29px); }
-        .face-back   { transform: rotateY(180deg) translateZ(29px); }
-        .face-left   { transform: rotateY(-90deg) translateZ(29px); }
-        .face-right  { transform: rotateY(90deg)  translateZ(29px); }
-        .face-top    { transform: rotateX(90deg)  translateZ(29px); }
-        .face-bottom { transform: rotateX(-90deg) translateZ(29px); }
-
-        @media (min-width: 640px) {
-          .face-front  { transform: translateZ(32px); }
-          .face-back   { transform: rotateY(180deg) translateZ(32px); }
-          .face-left   { transform: rotateY(-90deg) translateZ(32px); }
-          .face-right  { transform: rotateY(90deg)  translateZ(32px); }
-          .face-top    { transform: rotateX(90deg)  translateZ(32px); }
-          .face-bottom { transform: rotateX(-90deg) translateZ(32px); }
-        }
-
-        @media (min-width: 768px) {
-          .face-front  { transform: translateZ(36px); }
-          .face-back   { transform: rotateY(180deg) translateZ(36px); }
-          .face-left   { transform: rotateY(-90deg) translateZ(36px); }
-          .face-right  { transform: rotateY(90deg)  translateZ(36px); }
-          .face-top    { transform: rotateX(90deg)  translateZ(36px); }
-          .face-bottom { transform: rotateX(-90deg) translateZ(36px); }
-        }
-
-        /* ── glow shadow beneath ── */
-        .cube-shadow {
-          position: absolute;
-          bottom: -14px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 40px;
-          height: 9px;
-          border-radius: 50%;
-          filter: blur(8px);
-          opacity: 0.4;
-          transition: opacity 0.3s, width 0.3s;
-        }
-
-        @media (min-width: 640px) {
-          .cube-shadow {
-            bottom: -16px;
-            width: 46px;
-            height: 10px;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .cube-shadow {
-            bottom: -18px;
-            width: 50px;
-            height: 10px;
-          }
-        }
-
-        .cube-scene:hover .cube-shadow {
-          opacity: 0.7;
-          width: 60px;
-        }
-
-        /* ── entry animation ── */
         @keyframes cube-entry {
           from { opacity: 0; transform: scale(0.4) rotateY(-180deg); }
           to   { opacity: 1; transform: scale(1) rotateY(0deg); }
         }
-
-        .cube-entry {
-          animation: cube-entry 0.6s cubic-bezier(.22,.8,.5,1) both;
-        }
       `}</style>
 
-      <section className="space-y-6">
-        <div className="flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-8 sm:gap-x-5 md:justify-between md:gap-x-4">
-          {socials.map((s, i) => (
-            <a
-              key={s.name}
-              href={s.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={s.name}
-              className="cube-entry relative block"
-              style={{ animationDelay: `${i * 0.08}s` }}
-              onMouseEnter={() => setHovered(s.name)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div className="cube-scene">
-                <div className={`cube${hovered === s.name ? " paused" : ""}`}>
-                  <div
-                    className="face face-front"
-                    style={{ background: s.bg, color: s.color }}
-                  >
-                    {s.icon}
-                  </div>
+      <section ref={ref} className="min-w-0 space-y-6">
+        {/* 4 cubes per row on phones and small tablets (4 + 4), one row of 8 from md */}
+        <div className="grid w-full grid-cols-4 justify-items-center gap-x-2 gap-y-8 sm:gap-x-4 md:grid-cols-8 md:gap-x-2">
+          {socials.map((s) => {
+            const paused = hovered === s.name || !onScreen;
 
+            return (
+              <a
+                key={s.name}
+                href={s.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={s.name}
+                aria-label={s.name}
+                className={`relative block touch-manipulation [-webkit-tap-highlight-color:transparent] motion-reduce:animate-none ${s.entry}`}
+                // mouse / pen only: on touch, a tap fakes "hover" and would
+                // leave the cube frozen
+                onPointerEnter={(e) => {
+                  if (e.pointerType !== "touch") setHovered(s.name);
+                }}
+                onPointerLeave={(e) => {
+                  if (e.pointerType !== "touch") setHovered(null);
+                }}
+              >
+                {/* scene: size + perspective */}
+                <div className="peer h-[58px] w-[58px] [perspective:280px] sm:h-16 sm:w-16 sm:[perspective:300px] md:h-[72px] md:w-[72px] md:[perspective:320px]">
+                  {/* cube: 3D spin */}
                   <div
-                    className="face face-back"
-                    style={{ background: s.bg, color: s.color }}
+                    className={`relative h-full w-full animate-[cube-spin_6s_linear_infinite] will-change-transform [transform-style:preserve-3d] motion-reduce:animate-none ${
+                      paused ? "[animation-play-state:paused]" : ""
+                    }`}
                   >
-                    {s.icon}
-                  </div>
-
-                  <div
-                    className="face face-left"
-                    style={{
-                      background: `color-mix(in srgb, ${s.bg} 70%, black)`,
-                      color: s.color,
-                    }}
-                  >
-                    {s.icon}
-                  </div>
-
-                  <div
-                    className="face face-right"
-                    style={{
-                      background: `color-mix(in srgb, ${s.bg} 70%, black)`,
-                      color: s.color,
-                    }}
-                  >
-                    {s.icon}
-                  </div>
-
-                  <div
-                    className="face face-top"
-                    style={{
-                      background: `color-mix(in srgb, ${s.bg} 55%, black)`,
-                      color: s.color,
-                    }}
-                  >
-                    {s.icon}
-                  </div>
-
-                  <div
-                    className="face face-bottom"
-                    style={{
-                      background: `color-mix(in srgb, ${s.bg} 45%, black)`,
-                      color: s.color,
-                    }}
-                  >
-                    {s.icon}
+                    {FACES.map((f) => (
+                      <div
+                        key={f.key}
+                        className={`${FACE_BASE} ${s.bg} ${s.text} ${f.pos} ${f.shade}`}
+                      >
+                        {s.icon}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
 
-              <div className="cube-shadow" style={{ background: s.color }} />
-            </a>
-          ))}
+                {/* glow shadow beneath */}
+                <div
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute bottom-[-14px] left-1/2 h-[9px] w-10 -translate-x-1/2 rounded-full opacity-40 blur-[8px] [transition:opacity_0.3s,width_0.3s] sm:bottom-[-16px] sm:h-[10px] sm:w-[46px] md:bottom-[-18px] md:w-[50px] [@media(hover:hover)]:peer-hover:w-[60px] [@media(hover:hover)]:peer-hover:opacity-70 ${s.glow}`}
+                />
+              </a>
+            );
+          })}
         </div>
       </section>
     </>

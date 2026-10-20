@@ -6,4 +6,5 @@ export const SOCIAL_LINKS = {
   youtube: "https://youtube.com/@vishwanadeen",
   tiktok: "https://www.tiktok.com/@vishwa_nadeen?_r=1&_t=ZS-94WVQ6zSsnl",
   telegram: "https://t.me/vishwa_nadeen",
+  whatsapp: "https://wa.me/+94715688517",
 };
