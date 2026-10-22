@@ -3,7 +3,7 @@
     <img src="./frontend/public/og-image.png" alt="Vishwa Nadeen Portfolio" width="100%" />
   </a>
 
-  <h1>✨ Vishwa Nadeen — Portfolio Platform</h1>
+  <h1>✨ Vishwa Nadeen - Portfolio Platform</h1>
   <p><strong>A polished, data-driven personal portfolio with a secure content-management workspace.</strong></p>
 
   <p>
