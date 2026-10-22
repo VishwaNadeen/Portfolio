@@ -6,7 +6,7 @@ import FloatingContact from "@/components/comon/FloatingContact";
 
 export const metadata: Metadata = {
   title: {
-    default: "Vishwa Nadeen | Software Engineer",
+    default: "Vishwa Nadeen",
     template: "%s | Vishwa Nadeen",
   },
   description:
