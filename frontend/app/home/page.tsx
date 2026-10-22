@@ -11,7 +11,7 @@ import GithubLanguages from "@/sections/home/GithubLanguages";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Vishwa Nadeen | Full Stack Developer Portfolio",
+  title: "Vishwa Nadeen",
   description: "Portfolio of Vishwa Nadeen - Full Stack Developer",
   alternates: {
     canonical: "https://vishwanadeen.lk/",

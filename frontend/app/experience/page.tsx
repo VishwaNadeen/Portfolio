@@ -5,7 +5,7 @@ import { Clock3, Sparkles } from "lucide-react";
 import PageTransition from "@/components/animation/PageTransition";
 
 export const metadata: Metadata = {
-  title: "Experience | Vishwa Nadeen",
+  title: "Experience",
   description: "Professional experience — coming soon.",
   alternates: {
     canonical: "https://vishwanadeen.lk/experience",

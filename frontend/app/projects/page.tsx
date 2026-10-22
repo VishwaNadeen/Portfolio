@@ -4,7 +4,7 @@ import BackgroundAnimation from "@/components/animation/BackgroundAnimation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Projects | Vishwa Nadeen",
+  title: "Projects",
   description: "Explore projects by Vishwa Nadeen.",
   alternates: {
     canonical: "https://vishwanadeen.lk/projects",
